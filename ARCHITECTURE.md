@@ -43,18 +43,69 @@ TODO : en 3 à 5 lignes, le rôle de chaque base dans votre portfolio.
 ### 3.1 Collection `candidats` - pattern TODO (*Embedding* ? *Referencing* ?)
 
 ```json
-TODO : un document d'exemple complet
+{
+  "candidat_slug": "alice-martin",
+  "nom": "Martin",
+  "prenom": "Alice",
+  "email": "alice.martin@example.com",
+  "titre": "Développeuse Data",
+  "localisation": "Paris",
+  "description": "Développeuse spécialisée en data et développement logiciel.",
+
+  "experiences": [
+    {
+      "poste": "Data Analyst",
+      "entreprise": "Tech Solutions",
+      "date_debut": "2023-01",
+      "date_fin": "2024-06",
+      "description": "Analyse et exploitation de données."
+    }
+  ],
+
+  "formations": [
+    {
+      "diplome": "Master Informatique",
+      "etablissement": "Université de Paris",
+      "annee_debut": 2021,
+      "annee_fin": 2023
+    }
+  ],
+
+  "created_at": "2026-11-16",
+  "updated_at": "2026-11-16"
+}
 ```
 
-**Justification** (cardinalité bornée ou non, lecture en une requête, fréquence de mise à jour) : TODO
+**Justification** (cardinalité bornée ou non, lecture en une requête, fréquence de mise à jour) : **Pattern choisi : Embedding**
+
+Les expériences et formations sont intégrées au document du candidat, car leur nombre est limité et elles sont généralement consultées avec son profil. Cela permet de récupérer toutes ces informations en une seule requête.
 
 ### 3.2 Collection `projets` - pattern TODO
 
 ```json
-TODO : un document d'exemple complet
+{
+  "projet_slug": "smartcity-explorer",
+  "titre": "SmartCity Explorer",
+  "description": "Application d'analyse des données urbaines.",
+  "candidat_slug": "alice-martin",
+  "date_debut": "2025-01",
+  "date_fin": "2025-06",
+  "competences": [
+    "python",
+    "mongodb",
+    "fastapi"
+  ],
+  "technologies": [
+    "Python",
+    "MongoDB",
+    "FastAPI"
+  ]
+}
 ```
 
-**Justification** : TODO
+**Justification** : **Pattern choisi : Referencing**
+
+Les projets sont stockés séparément et reliés aux candidats par leur `candidat_slug`. Cela facilite leur consultation, leur modification et leur filtrage indépendamment du profil.
 
 ### 3.3 Index
 
