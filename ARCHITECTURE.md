@@ -149,16 +149,19 @@ TODO : db.projets.aggregate([
 ```mermaid
 graph LR
     %% TODO : vos nœuds et relations orientées, ex. (Candidat)-[:A_REALISE]->(Projet)-[:UTILISE]->(Competence)-[:APPARTIENT_A]->(Domaine)
-    A[TODO] --> B[TODO] --> B[TODO]
+    A[Candidat] --> B[Projet] --> C[Competence]
 ```
 
 | Label | Propriétés | Clé unique |
 |---|---|---|
-| TODO | TODO | TODO |
+| Candidat | candidat_slug, nom, prenom | candidat_slug |
+| Projet | projet_slug, titre, description | projet_slug |
+| Competence | skill_slug, nom | skill_slug |
 
 | Relation | De → Vers | Propriétés | Pourquoi ce sens |
 |---|---|---|---|
-| TODO | TODO | TODO | TODO |
+| REALISE | Candidat → Projet | aucune | Le candidat réalise le projet |
+| UTILISE | Projet → Competence | aucune | Le projet mobilise des compétences |
 
 ### 4.2 Les 3 requêtes Cypher clés
 
