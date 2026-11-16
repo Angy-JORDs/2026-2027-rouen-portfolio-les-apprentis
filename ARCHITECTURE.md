@@ -149,7 +149,7 @@ TODO : db.projets.aggregate([
 ```mermaid
 graph LR
     %% TODO : vos nœuds et relations orientées, ex. (Candidat)-[:A_REALISE]->(Projet)-[:UTILISE]->(Competence)-[:APPARTIENT_A]->(Domaine)
-    A[TODO] --> B[TODO]
+    A[TODO] --> B[TODO] --> B[TODO]
 ```
 
 | Label | Propriétés | Clé unique |
