@@ -29,12 +29,12 @@ TODO : en 3 à 5 lignes, le rôle de chaque base dans votre portfolio.
 
 | # | Besoin (vu par un recruteur) | Route API | Base(s) interrogée(s) |
 |---|---|---|---|
-| R1 | Profil + timeline (expériences, formations) d'un candidat | `GET /api/candidats/{slug}` | TODO |
-| R2 | Projets d'un candidat, filtrables par compétence | `GET /api/candidats/{slug}/projets` | TODO |
-| R3 | Statistiques d'un candidat par compétence | `GET /api/candidats/{slug}/stats` | TODO |
-| R4 | Projets similaires à un projet | `GET /api/graph/projets/{slug}/similaires` | TODO |
-| R5 | Graphe de compétences d'un candidat | `GET /api/graph/competences/{slug}` | TODO |
-| TODO | Vos requêtes supplémentaires | TODO | TODO |
+| R1 | Profil + timeline (expériences, formations) d'un candidat | `GET /api/candidats/{slug}` | MongoDB |
+| R2 | Projets d'un candidat, filtrables par compétence | `GET /api/candidats/{slug}/projets` | MongoDB |
+| R3 | Statistiques d'un candidat par compétence | `GET /api/candidats/{slug}/stats` | MongoDB |
+| R4 | Projets similaires à un projet | `GET /api/graph/projets/{slug}/similaires` | Neo4j |
+| R5 | Graphe de compétences d'un candidat | `GET /api/graph/competences/{slug}` | Neo4j |
+| TODO | Quels projets prouvent que ce candidat maîtrise Python ? | TODO | TODO |
 
 ## 3. Modèle MongoDB
 
