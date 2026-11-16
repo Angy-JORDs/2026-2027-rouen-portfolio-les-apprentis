@@ -24,6 +24,11 @@ flowchart LR
 ```
 
 TODO : en 3 à 5 lignes, le rôle de chaque base dans votre portfolio.
+FastAPI : c'est le point d'entrée des requêtes. Il reçoit les demandes des frontends, interroge les bases de données et retourne les résultats.
+
+MongoDB : stocke les informations détaillées des candidats et des projets. Les expériences et formations sont intégrées aux documents des candidats.
+
+Neo4j : représente les relations entre les candidats, les projets et les compétences. Il permet notamment de rechercher des projets similaires et d'identifier les compétences communes.
 
 ## 2. Les requêtes à servir
 
