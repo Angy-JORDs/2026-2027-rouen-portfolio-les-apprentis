@@ -213,8 +213,8 @@ Lors de la suppression d'un projet, le document correspondant est supprimé dans
 
 | Membre (pseudo GitHub) | Backend (couches / routes) | Frontend |
 |---|---|---|
-| TODO | Routes candidats et MongoDB | `frontends/frontend-1/` |
-| TODO | Routes projets et statistiques | `frontends/frontend-2/` |
-| TODO | Routes Neo4j et requêtes Cypher | `frontends/frontend-3/` |
-| TODO | Intégration et tests API | `frontends/frontend-4/` |
+| Feverine | Backend commun | `frontends/frontend-1/` |
+| TODO | Backend commun | `frontends/frontend-2/` |
+| TODO | Backend commun | `frontends/frontend-3/` |
+| TODO | Backend commun | `frontends/frontend-4/` |
 
