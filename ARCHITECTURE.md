@@ -167,13 +167,29 @@ graph LR
 
 ```cypher
 // R4 - projets similaires
-TODO
+MATCH (p:Projet {projet_slug: $slug})
+      -[:UTILISE]->(s:Competence)
+      <-[:UTILISE]-(autre:Projet)
+WHERE autre.projet_slug <> $slug
+RETURN autre.projet_slug AS projet,
+       autre.titre AS titre,
+       count(s) AS competences_communes
+ORDER BY competences_communes DESC
 
 // R5 - graphe de compétences d'un candidat
-TODO
+MATCH (c:Candidat {candidat_slug: $slug})
+      -[:REALISE]->(p:Projet)
+      -[:UTILISE]->(s:Competence)
+RETURN c, p, s
 
 // Compétences communes aux membres de l'équipe (ou requête de votre choix)
-TODO
+MATCH (c1:Candidat)-[:REALISE]->(:Projet)
+      -[:UTILISE]->(s:Competence)
+      <-[:UTILISE]-(:Projet)<-[:REALISE]-(c2:Candidat)
+WHERE c1.candidat_slug < c2.candidat_slug
+RETURN c1.nom AS candidat1,
+       c2.nom AS candidat2,
+       collect(DISTINCT s.nom) AS competences_communes
 ```
 
 ### 4.3 Contraintes
