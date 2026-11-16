@@ -111,12 +111,35 @@ Les projets sont stockés séparément et reliés aux candidats par leur `candid
 
 | Collection | Index | Requête servie (R#) |
 |---|---|---|
-| TODO | TODO | TODO |
+| candidats | candidat_slug | R1 |
+| projets | projet_slug | R2, R4 |
+| projets | candidat_slug | R2 |
+| projets | competences | R2, R3 |
 
 ### 3.4 Pipeline d'agrégation clé (R3)
 
 ```javascript
-TODO : db.projets.aggregate([ ... ])
+TODO : db.projets.aggregate([
+  {
+    $match: {
+      candidat_slug: "alice-martin"
+    }
+  },
+  {
+    $unwind: "$competences"
+  },
+  {
+    $group: {
+      _id: "$competences",
+      nombre: { $sum: 1 }
+    }
+  },
+  {
+    $sort: {
+      nombre: -1
+    }
+  }
+]);
 ```
 
 ## 4. Modèle Neo4j
