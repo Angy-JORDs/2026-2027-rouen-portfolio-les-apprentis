@@ -34,7 +34,9 @@ TODO : en 3 à 5 lignes, le rôle de chaque base dans votre portfolio.
 | R3 | Statistiques d'un candidat par compétence | `GET /api/candidats/{slug}/stats` | MongoDB |
 | R4 | Projets similaires à un projet | `GET /api/graph/projets/{slug}/similaires` | Neo4j |
 | R5 | Graphe de compétences d'un candidat | `GET /api/graph/competences/{slug}` | Neo4j |
-| TODO | Quels projets prouvent que ce candidat maîtrise Python ? | TODO | TODO |
+| R6 | Liste des candidats possédant une compétence donnée | GET /api/competences/{slug}/candidats | Neo4j |
+| R7 | Afficher les projets utilisant une technologie donnée | GET /api/competences/{slug}/projets | Neo4j |
+| R8 | Afficher les candidats ayant participé à un projet commun | GET /api/graph/projets/{slug}/candidats | Neo4j |
 
 ## 3. Modèle MongoDB
 
