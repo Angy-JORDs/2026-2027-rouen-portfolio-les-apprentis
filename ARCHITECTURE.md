@@ -202,11 +202,12 @@ TODO : CREATE CONSTRAINT ... IF NOT EXISTS
 
 | Entité | Slug | Dans MongoDB | Dans Neo4j |
 |---|---|---|---|
-| Candidat | `candidat_slug` (ex. `alice-martin`) | TODO | TODO |
-| Projet | `projet_slug` (ex. `smartcity-explorer`) | TODO | TODO |
-| Compétence | `skill_slug` (ex. `mongodb`) | TODO | TODO |
+| Candidat | `candidat_slug` (ex. `alice-martin`) | Collection candidats | Nœud Candidat |
+| Projet | `projet_slug` (ex. `smartcity-explorer`) | Collection projets | Nœud Projet |
+| Compétence | `skill_slug` (ex. `mongodb`) | Champ competences dans projets | Nœud Competence |
 
-**Suppression d'un projet** : que faites-vous dans chaque base ? TODO
+**Suppression d'un projet** : que faites-vous dans chaque base ? 
+Lors de la suppression d'un projet, le document correspondant est supprimé dans MongoDB et le nœud associé ainsi que ses relations sont supprimés dans Neo4j. Les deux opérations sont coordonnées par l'API afin de maintenir la cohérence des données.
 
 ## 6. Répartition du travail
 
