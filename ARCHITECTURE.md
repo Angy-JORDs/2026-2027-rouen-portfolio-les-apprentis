@@ -16,11 +16,19 @@ enregistrez dans `docs/architecture.excalidraw.png`, puis remplacez le schéma M
 L'image reste modifiable : rouvrez-la dans Excalidraw (ou dans VS Code avec l'extension *Excalidraw*).
 
 ```mermaid
+
 flowchart LR
-    F["Frontends (1 par membre)"] -->|HTTP JSON| API["FastAPI - backend d'équipe"]
-    API -->|"candidats, projets"| M[("MongoDB")]
-    API -->|"graphe de compétences"| N[("Neo4j")]
-    %% TODO : complétez / corrigez ce schéma selon VOS choix
+    F["Frontends<br/>(1 par membre)"]
+
+    API["FastAPI -<br/>backend d'équipe"]
+
+    M[("MongoDB")]
+    N[("Neo4j")]
+
+    F -->|"HTTP JSON"| API
+    API -->|"Candidats, projets"| M
+    API -->|"Graphe de compétences"| N
+
 ```
 
 TODO : en 3 à 5 lignes, le rôle de chaque base dans votre portfolio.
