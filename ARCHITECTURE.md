@@ -45,9 +45,9 @@ Neo4j : représente les relations entre les candidats, les projets et les compé
 | R3 | Statistiques d'un candidat par compétence | `GET /api/candidats/{slug}/stats` | MongoDB |
 | R4 | Projets similaires à un projet | `GET /api/graph/projets/{slug}/similaires` | Neo4j |
 | R5 | Graphe de compétences d'un candidat | `GET /api/graph/competences/{slug}` | Neo4j |
-| R6 | Liste des candidats possédant une compétence donnée | GET /api/competences/{slug}/candidats | Neo4j |
-| R7 | Afficher les projets utilisant une technologie donnée | GET /api/competences/{slug}/projets | Neo4j |
-| R8 | Afficher les candidats ayant participé à un projet commun | GET /api/graph/projets/{slug}/candidats | Neo4j |
+| R6 | Liste des candidats possédant une compétence donnée | `GET /api/competences/{slug}/candidats` | Neo4j |
+| R7 | Afficher les projets utilisant une technologie donnée | `GET /api/competences/{slug}/projets` | Neo4j |
+| R8 | Consulter la fiche détaillée d'un projet | `GET /api/projets/{slug}` | MongoDB |
 
 ## 3. Modèle MongoDB
 
