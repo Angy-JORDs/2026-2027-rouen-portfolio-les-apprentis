@@ -1,7 +1,7 @@
-# 🧠 ARCHITECTURE - Équipe `TODO-nom-equipe`
+# 🧠 ARCHITECTURE - Équipe `les-apprentis`
 
 > **Jalon 1** : ce document est votre **spécification**. Il doit être **complet** : toute l'équipe va coder dessus.
-> Toutes les sections sont obligatoires. Remplacez **tous** les `TODO` (la CI « Livrables » les compte).
+> Toutes les sections sont obligatoires. Remplacez **tous** les `$T$O$D$O` (la CI « Livrables » les compte).
 > En soutenance (5 à 6 min), vous présenterez surtout la **section 1** (schéma) et le contrat `API_ROUTES.md`.
 
 ## 1. Schéma d'architecture
@@ -29,7 +29,7 @@ flowchart LR
     API -->|"Graphe de compétences"| N
 ```
 
-TODO : en 3 à 5 lignes, le rôle de chaque base dans votre portfolio.
+$T$O$D$O : en 3 à 5 lignes, le rôle de chaque base dans votre portfolio.
 FastAPI : c'est le point d'entrée des requêtes. Il reçoit les demandes des frontends, interroge les bases de données et retourne les résultats.
 
 MongoDB : stocke les informations détaillées des candidats et des projets. Les expériences et formations sont intégrées aux documents des candidats.
@@ -51,7 +51,7 @@ Neo4j : représente les relations entre les candidats, les projets et les compé
 
 ## 3. Modèle MongoDB
 
-### 3.1 Collection `candidats` - pattern TODO (*Embedding* ? *Referencing* ?)
+### 3.1 Collection `candidats` - pattern $T$O$D$O (*Embedding*)
 
 ```json
 {
@@ -91,7 +91,7 @@ Neo4j : représente les relations entre les candidats, les projets et les compé
 
 Les expériences et formations sont intégrées au document du candidat, car leur nombre est limité et elles sont généralement consultées avec son profil. Cela permet de récupérer toutes ces informations en une seule requête.
 
-### 3.2 Collection `projets` - pattern TODO
+### 3.2 Collection `projets` - pattern (Referencing)
 
 ```json
 {
@@ -130,7 +130,7 @@ Les projets sont stockés séparément et reliés aux candidats par leur `candid
 ### 3.4 Pipeline d'agrégation clé (R3)
 
 ```javascript
-TODO : db.projets.aggregate([
+$T$O$D$O : db.projets.aggregate([
   {
     $match: {
       candidat_slug: "alice-martin"
@@ -159,7 +159,7 @@ TODO : db.projets.aggregate([
 
 ```mermaid
 graph LR
-    %% TODO : vos nœuds et relations orientées, ex. (Candidat)-[:A_REALISE]->(Projet)-[:UTILISE]->(Competence)-[:APPARTIENT_A]->(Domaine)
+    %% $T$O$D$O : vos nœuds et relations orientées, ex. (Candidat)-[:A_REALISE]->(Projet)-[:UTILISE]->(Competence)-[:APPARTIENT_A]->(Domaine)
     A[Candidat] --> B[Projet] --> C[Competence]
 ```
 
@@ -206,8 +206,11 @@ RETURN c1.nom AS candidat1,
 ### 4.3 Contraintes
 
 ```cypher
-TODO : CREATE CONSTRAINT ... IF NOT EXISTS
+$T$O$D$O : CREATE CONSTRAINT ... IF NOT EXISTS
 ```
+CREATE CONSTRAINT candidat_slug_unique IF NOT EXISTS FOR (c:Candidat) REQUIRE c.candidat_slug IS UNIQUE;
+CREATE CONSTRAINT projet_slug_unique IF NOT EXISTS FOR (p:Projet) REQUIRE p.projet_slug IS UNIQUE;
+CREATE CONSTRAINT skill_slug_unique IF NOT EXISTS FOR (s:Competence) REQUIRE s.skill_slug IS UNIQUE;
 
 ## 5. Cohérence entre les bases (slugs pivots)
 
@@ -225,7 +228,7 @@ Lors de la suppression d'un projet, le document correspondant est supprimé dans
 | Membre (pseudo GitHub) | Backend (couches / routes) | Frontend |
 |---|---|---|
 | Feverine | Backend commun | `frontends/frontend-1/` |
-| TODO | Backend commun | `frontends/frontend-2/` |
-| TODO | Backend commun | `frontends/frontend-3/` |
-| TODO | Backend commun | `frontends/frontend-4/` |
+| loic-moumy | Backend commun | `frontends/frontend-2/` |
+| JoelDIANGON | Backend commun | `frontends/frontend-3/` |
+| Angy-JORDs | Backend commun | `frontends/frontend-4/` |
 
