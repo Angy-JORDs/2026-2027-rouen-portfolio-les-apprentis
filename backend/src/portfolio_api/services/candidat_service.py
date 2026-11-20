@@ -17,6 +17,7 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
+from portfolio_api.core.slugs import normalize_slug
 from portfolio_api.models import CandidatOut, CandidatSummary, Page, ProjetOut, StatsOut
 
 
@@ -40,11 +41,11 @@ class CandidatService:
     async def get_candidat_projets(
         self, slug: str, *, competence: Optional[str] = None, page: int = 1, size: int = 20
     ) -> Optional[Page[ProjetOut]]:
-        """R2 — projets du candidat, filtrables par compétence."""
+        """R2 — projets du candidat, filtrables par compétence (" MongoDB " -> "mongodb")."""
         if await self.candidat_repo.get_candidat_by_slug(slug) is None:
             return None
         rows, total = await self.projet_repo.get_projets(
-            candidat_slug=slug, competence=competence, page=page, size=size
+            candidat_slug=slug, competence=normalize_slug(competence), page=page, size=size
         )
         return Page[ProjetOut](items=rows, total=total, page=page, size=size)
 

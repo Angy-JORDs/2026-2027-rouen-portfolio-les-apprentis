@@ -9,6 +9,12 @@ Le seed est générique : il charge tout ce qui se trouve dans data/candidats/*.
 data/projets/*.json, sans rien coder en dur. Pour ajouter ou modifier une donnée, on édite
 le JSON puis on relance `just seed` — aucune ligne de code à écrire.
 
+Étapes :
+1. prepare()   : normalise les slugs pivots (" MongoDB " -> "mongodb") et valide les données ;
+                 en cas d'erreur, aucune base n'est modifiée.
+2. seed_mongo  : vide puis recharge les collections, crée les index (ARCHITECTURE.md §3).
+3. seed_neo4j  : contraintes, puis graphe Candidat -[:REALISE]-> Projet -[:UTILISE]-> Competence (§4).
+
 Idempotence : chaque lancement vide puis recharge les collections MongoDB et les nœuds
 Candidat / Projet / Competence de Neo4j. Les bases reflètent donc exactement le dossier data/
 (une donnée retirée du JSON disparaît aussi des bases).
@@ -21,7 +27,9 @@ import copy
 import json
 import sys
 from pathlib import Path
+from typing import Any
 
+from portfolio_api.core.slugs import normalize_slug
 from portfolio_api.db.mongo import close_mongo, get_mongo_db
 from portfolio_api.db.neo4j import close_neo4j, get_neo4j_driver
 
@@ -39,50 +47,102 @@ def load_member_files(kind: str) -> list[dict]:
     return docs
 
 
-# --------------------------------------------------------------------------- contrôle des données
+# --------------------------------------------------------------------------- normalisation + validation
 
-def check_data(candidats: list[dict], projets: list[dict]) -> list[str]:
-    """Vérifie la cohérence de data/ avant d'écrire dans les bases.
+def _as_list(value: Any) -> list:
+    """None -> [] ; "x" -> ["x"] ; liste -> liste."""
+    if value is None:
+        return []
+    return value if isinstance(value, list) else [value]
 
-    Lève SystemExit (aucune base modifiée) si une erreur bloquante est trouvée ;
-    renvoie la liste des avertissements non bloquants.
+
+def _slug_list(values: Any) -> list[str]:
+    """Normalise une liste de slugs : minuscules, sans espaces, sans vides ni doublons (ordre conservé)."""
+    slugs: list[str] = []
+    for value in _as_list(values):
+        slug = normalize_slug(value)
+        if slug and slug not in slugs:
+            slugs.append(slug)
+    return slugs
+
+
+def prepare(candidats: list[dict], projets: list[dict]) -> tuple[list[dict], list[dict], list[str]]:
+    """Normalise et valide les données de data/ avant toute écriture en base.
+
+    - slugs pivots en minuscules, sans espaces (candidat_slug, projet_slug, skill_slug,
+      candidat_slugs, compétences des projets et des expériences), sans doublons ;
+    - ancien format accepté : `candidat_slug` (un seul auteur) devient `candidat_slugs` ;
+    - lève ValueError (toutes les erreurs listées) si un slug manque, si un champ obligatoire
+      manque ou si un slug est en double ;
+    - renvoie (candidats, projets, avertissements) : un auteur inconnu donne un avertissement
+      (la relation REALISE correspondante est ignorée dans Neo4j).
+
+    Les listes reçues ne sont pas modifiées (copies).
     """
     erreurs: list[str] = []
     avertissements: list[str] = []
 
+    cands: list[dict] = []
     vus: set[str] = set()
-    for c in candidats:
-        for champ in ("candidat_slug", "prenom", "nom"):
+    for i, brut in enumerate(candidats):
+        c = copy.deepcopy(brut)
+        slug = normalize_slug(c.get("candidat_slug"))
+        nom_affiche = f"{c.get('prenom', '?')} {c.get('nom', '?')}"
+        if not slug:
+            erreurs.append(f"candidat n°{i + 1} ({nom_affiche}) : candidat_slug manquant")
+            continue
+        c["candidat_slug"] = slug
+        for champ in ("prenom", "nom"):
             if not c.get(champ):
-                erreurs.append(f"candidat {c.get('candidat_slug', '?')} : champ « {champ} » manquant")
-        slug = c.get("candidat_slug")
+                erreurs.append(f"candidat {slug} : champ « {champ} » manquant")
         if slug in vus:
             erreurs.append(f"candidat_slug en double : {slug}")
         vus.add(slug)
 
-    declarees = {k["skill_slug"] for c in candidats for k in c.get("competences") or []}
+        competences: list[dict] = []
+        declarees: set[str] = set()
+        for k in _as_list(c.get("competences")):
+            skill = normalize_slug(k.get("skill_slug")) if isinstance(k, dict) else None
+            if not skill:
+                erreurs.append(f"candidat {slug} : compétence sans skill_slug ({k!r})")
+                continue
+            if skill not in declarees:  # une compétence déclarée deux fois : on garde la première
+                declarees.add(skill)
+                competences.append({**k, "skill_slug": skill})
+        c["competences"] = competences
+        for exp in _as_list(c.get("experiences")):
+            if isinstance(exp, dict):
+                exp["competences"] = _slug_list(exp.get("competences"))
+        cands.append(c)
+
+    slugs_candidats = {c["candidat_slug"] for c in cands}
+    projs: list[dict] = []
     vus = set()
-    for p in projets:
-        slug = p.get("projet_slug", "?")
-        for champ in ("projet_slug", "titre"):
-            if not p.get(champ):
-                erreurs.append(f"projet {slug} : champ « {champ} » manquant")
+    for i, brut in enumerate(projets):
+        p = copy.deepcopy(brut)
+        slug = normalize_slug(p.get("projet_slug"))
+        if not slug:
+            erreurs.append(f"projet n°{i + 1} ({p.get('titre', '?')}) : projet_slug manquant")
+            continue
+        p["projet_slug"] = slug
+        if not p.get("titre"):
+            erreurs.append(f"projet {slug} : champ « titre » manquant")
         if slug in vus:
             erreurs.append(f"projet_slug en double : {slug}")
         vus.add(slug)
-        for auteur in p.get("candidat_slugs") or []:
-            if auteur not in {c.get("candidat_slug") for c in candidats}:
+
+        # Ancien format : un seul auteur dans `candidat_slug` -> liste `candidat_slugs`
+        auteurs = _as_list(p.get("candidat_slugs")) + _as_list(p.pop("candidat_slug", None))
+        p["candidat_slugs"] = _slug_list(auteurs)
+        p["competences"] = _slug_list(p.get("competences"))
+        for auteur in p["candidat_slugs"]:
+            if auteur not in slugs_candidats:
                 avertissements.append(f"projet {slug} : candidat « {auteur} » inconnu (relation ignorée dans Neo4j)")
-        for skill in p.get("competences") or []:
-            if skill not in declarees:
-                avertissements.append(f"projet {slug} : compétence « {skill} » déclarée par aucun candidat")
+        projs.append(p)
 
     if erreurs:
-        print("[seed] ERREURS dans data/ — aucune base n'a été modifiée :", file=sys.stderr)
-        for e in erreurs:
-            print(f"  - {e}", file=sys.stderr)
-        raise SystemExit(1)
-    return avertissements
+        raise ValueError("\n".join(erreurs))
+    return cands, projs, avertissements
 
 
 # --------------------------------------------------------------------------- MongoDB
@@ -118,8 +178,11 @@ CONSTRAINTS = [
 ]
 
 
-def build_competences(candidats: list[dict], projets: list[dict]) -> list[dict]:
-    """Toutes les compétences : déclarées par les candidats (nom, domaine) + utilisées sans déclaration."""
+def build_competence_rows(candidats: list[dict], projets: list[dict]) -> list[dict]:
+    """Nœuds Competence : déclarées par les candidats (nom, domaine) + utilisées sans déclaration.
+
+    À appeler sur des données passées par prepare() (slugs déjà normalisés).
+    """
     competences: dict[str, dict] = {}
     for c in candidats:
         for k in c.get("competences") or []:
@@ -135,9 +198,9 @@ def build_competences(candidats: list[dict], projets: list[dict]) -> list[dict]:
 
 async def seed_neo4j(candidats: list[dict], projets: list[dict]) -> None:
     """Contraintes (§4.3), puis graphe (Candidat)-[:REALISE]->(Projet)-[:UTILISE]->(Competence) (§4.1)."""
-    competences = build_competences(candidats, projets)
-    realise = [{"candidat": a, "projet": p["projet_slug"]} for p in projets for a in p.get("candidat_slugs") or []]
-    utilise = [{"projet": p["projet_slug"], "skill": s} for p in projets for s in p.get("competences") or []]
+    competences = build_competence_rows(candidats, projets)
+    realise = [{"candidat": a, "projet": p["projet_slug"]} for p in projets for a in p["candidat_slugs"]]
+    utilise = [{"projet": p["projet_slug"], "skill": s} for p in projets for s in p["competences"]]
 
     async with get_neo4j_driver().session() as session:
         for query in CONSTRAINTS:
@@ -188,11 +251,18 @@ async def seed_neo4j(candidats: list[dict], projets: list[dict]) -> None:
 # --------------------------------------------------------------------------- point d'entrée
 
 async def main() -> None:
-    candidats = load_member_files("candidats")
-    projets = load_member_files("projets")
-    print(f"[seed] {len(candidats)} candidat(s), {len(projets)} projet(s) trouvés dans {DATA_DIR}")
+    bruts_candidats = load_member_files("candidats")
+    bruts_projets = load_member_files("projets")
+    print(f"[seed] {len(bruts_candidats)} candidat(s), {len(bruts_projets)} projet(s) trouvés dans {DATA_DIR}")
 
-    for avertissement in check_data(candidats, projets):
+    try:
+        candidats, projets, avertissements = prepare(bruts_candidats, bruts_projets)
+    except ValueError as exc:
+        print("[seed] ERREURS dans data/ — aucune base n'a été modifiée :", file=sys.stderr)
+        for ligne in str(exc).splitlines():
+            print(f"  - {ligne}", file=sys.stderr)
+        raise SystemExit(1) from None
+    for avertissement in avertissements:
         print(f"[seed] attention : {avertissement}")
 
     try:
