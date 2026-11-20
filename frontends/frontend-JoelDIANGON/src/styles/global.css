@@ -1,0 +1,278 @@
+/* ------------------------------------------------------------------ jetons de design */
+:root {
+  /* fonds : bleu profond */
+  --bg-0: #060e17;
+  --bg-1: #0a1622;
+  --bg-2: #0f2234;
+  --bg-3: #163049;
+
+  /* couleurs : bleu-gris, bleu doux, vert doux */
+  --blue: #3f7cac;
+  --blue-soft: #6fa8c9;
+  --blue-mist: #9cc3da;
+  --green: #8cc5a8;
+  --green-deep: #4f8f7a;
+  --gray: #8a9aa8;
+
+  /* texte */
+  --text: #e4edf2;
+  --text-dim: #a3b4c1;
+  --text-faint: #6f8293;
+
+  /* matières */
+  --line: rgba(156, 195, 218, 0.14);
+  --line-strong: rgba(156, 195, 218, 0.28);
+  --glass: rgba(12, 27, 41, 0.66);
+  --glass-strong: rgba(10, 22, 34, 0.86);
+  --glow: rgba(140, 197, 168, 0.35);
+
+  --radius: 18px;
+  --radius-sm: 10px;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --font-display: 'Sora', 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  color-scheme: dark;
+}
+
+/* ------------------------------------------------------------------ base */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-0);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+p {
+  margin: 0;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+}
+
+svg {
+  display: block;
+}
+
+code {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.9em;
+  padding: 0.1em 0.4em;
+  border-radius: 6px;
+  background: rgba(156, 195, 218, 0.1);
+}
+
+:focus-visible {
+  outline: 1.5px solid var(--green);
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+
+::selection {
+  background: rgba(140, 197, 168, 0.3);
+}
+
+.app {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 72%, rgba(22, 48, 73, 0.9), transparent 70%),
+    linear-gradient(180deg, var(--bg-0) 0%, var(--bg-1) 55%, var(--bg-2) 100%);
+}
+
+/* ------------------------------------------------------------------ boutons communs */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.6rem 1.1rem;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: rgba(140, 197, 168, 0.08);
+  color: var(--text);
+  font-size: 0.88rem;
+  text-decoration: none;
+  transition:
+    background 0.3s var(--ease),
+    border-color 0.3s var(--ease),
+    transform 0.3s var(--ease);
+}
+
+.btn:hover {
+  background: rgba(140, 197, 168, 0.16);
+  border-color: rgba(140, 197, 168, 0.5);
+  transform: translateY(-1px);
+}
+
+.btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.btn--ghost {
+  background: transparent;
+  margin-top: 1.4rem;
+}
+
+.btn--small {
+  padding: 0.35rem 0.8rem;
+  font-size: 0.8rem;
+}
+
+/* ------------------------------------------------------------------ états */
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 1.4rem 0;
+  color: var(--text-dim);
+}
+
+.state--loading {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.9rem;
+  font-size: 0.9rem;
+}
+
+.loader {
+  display: inline-flex;
+  gap: 5px;
+}
+
+.loader span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: pulse 1.2s var(--ease) infinite;
+}
+
+.loader span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.loader span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.state--error {
+  padding: 1.2rem 1.4rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(214, 160, 140, 0.25);
+  background: rgba(214, 160, 140, 0.06);
+}
+
+.state-title {
+  color: var(--text);
+  font-family: var(--font-display);
+}
+
+.state-text {
+  font-size: 0.9rem;
+}
+
+.state-text--hint {
+  color: var(--text-faint);
+}
+
+.state-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.3rem;
+}
+
+.source {
+  margin-top: 1.4rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  color: var(--text-faint);
+}
+
+.empty {
+  color: var(--text-faint);
+  font-size: 0.9rem;
+  padding: 0.6rem 0;
+}
+
+/* ------------------------------------------------------------------ bandeau API */
+.api-banner {
+  position: fixed;
+  left: 50%;
+  bottom: 1.2rem;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  max-width: min(92vw, 640px);
+  padding: 0.7rem 0.8rem 0.7rem 1.2rem;
+  border-radius: 999px;
+  border: 1px solid rgba(214, 160, 140, 0.3);
+  background: var(--glass-strong);
+  backdrop-filter: blur(14px);
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  translate: -50% 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

@@ -1,0 +1,102 @@
+import { useRef, useState } from 'react'
+import { motion } from 'framer-motion'
+import { SECTIONS, SECTION_BY_ID } from '../../content/sections'
+import { useCandidat } from '../../context/CandidatContext'
+import { useMediaQuery } from '../../hooks/useMediaQuery'
+import { ArrowRightIcon } from '../icons'
+import Backdrop from './Backdrop'
+import Boy from './Boy'
+import SceneObject from './SceneObject'
+
+const EASE = [0.22, 1, 0.36, 1]
+
+/**
+ * Écran d'accueil : le garçon face aux éléments de son parcours.
+ * Quand une section s'ouvre, la scène « plonge » vers l'élément choisi (zoom centré sur lui).
+ */
+export default function Scene({ activeId, onOpen }) {
+  const isMobile = useMediaQuery('(max-width: 760px)')
+  const [hovered, setHovered] = useState(null)
+  const { candidat } = useCandidat()
+
+  // Point de zoom : l'élément ouvert (on garde le dernier pendant l'animation de fermeture).
+  const lastFocus = useRef({ x: 50, y: 45 })
+  const active = activeId ? SECTION_BY_ID[activeId] : null
+  if (active) lastFocus.current = active.pos || { x: 50, y: 45 }
+
+  const focus = hovered ? SECTION_BY_ID[hovered] : null
+  const lookAt = focus?.pos ? (focus.pos.x - 50) / 34 : 0
+  const accroche = candidat?.titre?.split(' — ')[0]
+
+  return (
+    <motion.main
+      className="scene"
+      inert={activeId ? true : undefined}
+      animate={active ? { scale: 1.24, opacity: 0.32 } : { scale: 1, opacity: 1 }}
+      style={{ transformOrigin: `${lastFocus.current.x}% ${lastFocus.current.y}%` }}
+      transition={{ duration: 1, ease: EASE }}
+    >
+      <Backdrop showJourney={!isMobile} highlight={hovered} />
+
+      <motion.p
+        className="scene-brand"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1.2, delay: 0.2 }}
+      >
+        <span className="scene-brand-name">{candidat ? `${candidat.prenom} ${candidat.nom}` : 'Joël Diangon'}</span>
+        <span className="scene-brand-role">{accroche || 'Data · BI · IA'}</span>
+      </motion.p>
+
+      <motion.header
+        className="scene-intro"
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1.1, delay: 0.45, ease: EASE }}
+      >
+        <h1 className="scene-title">Mon parcours</h1>
+        <p className="scene-subtitle">Chaque expérience façonne la suite.</p>
+        <button type="button" className="scene-link" onClick={() => onOpen('parcours')}>
+          Voir la chronologie complète <ArrowRightIcon />
+        </button>
+      </motion.header>
+
+      <div className={`scene-objects scene-objects--${isMobile ? 'grid' : 'free'}`}>
+        {SECTIONS.map((section, index) => (
+          <SceneObject
+            key={section.id}
+            section={section}
+            index={index}
+            layout={isMobile ? 'grid' : 'free'}
+            dimmed={Boolean(hovered && hovered !== section.id)}
+            onOpen={onOpen}
+            onHover={setHovered}
+          />
+        ))}
+      </div>
+
+      <motion.div
+        className="boy-stage"
+        initial={{ opacity: 0, y: 26 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1.4, delay: 0.1, ease: EASE }}
+      >
+        <div className="platform" aria-hidden="true">
+          <span className="platform-ring" />
+          <span className="platform-ring platform-ring--outer" />
+        </div>
+        <Boy lookAt={lookAt} />
+      </motion.div>
+
+      <motion.p
+        className="scene-hint"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1, delay: 2.2 }}
+      >
+        <span className="scene-hint-dot" aria-hidden="true" />
+        {isMobile ? 'Touchez un élément pour l’explorer' : 'Survolez les éléments — cliquez pour explorer'}
+      </motion.p>
+    </motion.main>
+  )
+}
