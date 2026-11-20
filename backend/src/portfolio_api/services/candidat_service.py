@@ -18,58 +18,15 @@ from portfolio_api.db.neo4j import close_neo4j, get_neo4j_driver
 DATA_DIR = Path(__file__).resolve().parents[4] / "data"
 
 
-class CandidatService:
-    def __init__(self, candidat_repo: Any, projet_repo: Any):
-        self.candidat_repo = candidat_repo
-        self.projet_repo = projet_repo
-
-    async def search_candidats(self, *, page: int = 1, size: int = 20) -> Page[CandidatSummary]:
-        """Liste paginée des candidats."""
-        rows, total = await self.candidat_repo.get_candidats(skip=(page - 1) * size, limit=size)
-        return Page[CandidatSummary](items=rows, total=total, page=page, size=size)
-
-    async def get_candidat_detail(self, slug: str) -> Optional[CandidatOut]:
-        """R1 — profil complet + timeline fusionnée."""
-        doc = await self.candidat_repo.get_candidat_by_slug(slug)
-        if doc is None:
-            return None
-        return CandidatOut(**{**doc, "timeline": build_timeline(doc)})
-
-    async def get_candidat_projets(
-        self, slug: str, *, competence: Optional[str] = None, page: int = 1, size: int = 20
-    ) -> Optional[Page[ProjetOut]]:
-        """R2 — projets du candidat, filtrables par compétence (" MongoDB " -> "mongodb")."""
-        if await self.candidat_repo.get_candidat_by_slug(slug) is None:
-            return None
-        rows, total = await self.projet_repo.get_projets(
-            candidat_slug=slug, competence=normalize_slug(competence), page=page, size=size
-        )
-        return Page[ProjetOut](items=rows, total=total, page=page, size=size)
-
-    async def get_candidat_stats(self, slug: str) -> Optional[StatsOut]:
-        """R3 — nombre de projets par compétence (agrégation MongoDB), enrichi des compétences déclarées."""
-        doc = await self.candidat_repo.get_candidat_by_slug(slug)
-        if doc is None:
-            return None
-
-        counts = await self.projet_repo.get_competence_stats(slug)
-        total = await self.projet_repo.count_projets_candidat(slug)
-        declared = {c["skill_slug"]: c for c in doc.get("competences") or []}
-
-        competences = []
-        for row in counts:
-            skill = row["skill_slug"]
-            info = declared.get(skill, {})
-            competences.append(
-                {
-                    "skill_slug": skill,
-                    "nom": info.get("nom", skill),  # non déclarée -> nom = slug (contrat)
-                    "domaine": info.get("domaine"),  # non déclarée -> null
-                    "niveau": info.get("niveau"),  # non déclarée -> null
-                    "nombre_projets": row["nombre_projets"],
-                }
-            )
-        return StatsOut(candidat_slug=slug, total_projets=total, competences=competences)
+def load_member_files(kind: str) -> list[dict]:
+    """Charge data/<kind>/*.json (hors fichiers commençant par '_', ex. _exemple.json)."""
+    docs: list[dict] = []
+    for path in sorted((DATA_DIR / kind).glob("*.json")):
+        if path.name.startswith("_"):
+            continue
+        content = json.loads(path.read_text(encoding="utf-8"))
+        docs.extend(content if isinstance(content, list) else [content])
+    return docs
 
 
 # ------------------------------------------------------------------ normalisation
