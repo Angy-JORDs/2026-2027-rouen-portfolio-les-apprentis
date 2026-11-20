@@ -3,18 +3,13 @@
 Aucune requête Cypher ici : le service assemble les lignes renvoyées par les repositories
 au format du contrat (API_ROUTES.md). Retourne None si la ressource n'existe pas (-> 404).
 
-Méthodes attendues des repositories :
-- neo4j_repo.get_projet(slug) -> dict | None                  ({"projet_slug", "titre"})
-- neo4j_repo.similar_projets(slug, limit) -> list[dict]        ({"projet_slug", "titre", "competences"}),
-      triés par nombre de compétences communes décroissant
-- neo4j_repo.get_candidat(slug) -> dict | None                 ({"candidat_slug", "prenom", "nom"})
-- neo4j_repo.candidat_graph(slug) -> list[dict]                une ligne par (projet, compétence) :
-      {"projet_slug", "projet_titre", "skill_slug", "skill_nom"} ; skill_* = None si projet sans compétence
-- neo4j_repo.get_competence(slug) -> dict | None               ({"skill_slug", "nom"})
-- neo4j_repo.candidats_by_competence(slug) -> list[dict]       ({"candidat_slug", "prenom", "nom", "nb_projets"}),
-      triés par nb_projets décroissant
-- neo4j_repo.projets_by_competence(slug) -> list[str]          projet_slugs, dans l'ordre d'affichage
-- projet_repo.find_by_slugs(slugs) -> list[dict]               projets complets (MongoDB)
+Repositories utilisés (repositories/neo4j_repo.py, repositories/mongo_projet_repo.py) :
+- neo4j_repo.get_projet(slug) / get_competence(slug)
+- neo4j_repo.get_similar_projets(slug, limit)
+- neo4j_repo.get_candidat_graph(slug) : [] si le candidat n'existe pas ; sinon une ligne par
+  (projet, compétence), avec projet_* = None si le candidat n'a aucun projet
+- neo4j_repo.get_candidats_by_competence(slug) / get_projet_slugs_by_competence(slug)
+- projet_repo.get_projets_by_slugs(slugs)
 """
 
 from __future__ import annotations
@@ -33,12 +28,12 @@ class GraphService:
         """R4 — projets partageant le plus de compétences avec `slug`."""
         if await self.neo4j_repo.get_projet(slug) is None:
             return None
-        rows = await self.neo4j_repo.similar_projets(slug, limit=limit)
+        rows = await self.neo4j_repo.get_similar_projets(slug, limit=limit)
         similaires = [
             {
                 "projet_slug": r["projet_slug"],
                 "titre": r["titre"],
-                "competences_communes": len(r["competences"]),
+                "competences_communes": r["competences_communes"],
                 "competences": r["competences"],
             }
             for r in rows
@@ -47,18 +42,17 @@ class GraphService:
 
     async def get_candidat_graph(self, slug: str) -> Optional[GraphOut]:
         """R5 — graphe Candidat → Projets → Compétences, au format {nodes, links}."""
-        candidat = await self.neo4j_repo.get_candidat(slug)
-        if candidat is None:
+        rows = await self.neo4j_repo.get_candidat_graph(slug)
+        if not rows:
             return None
-        rows = await self.neo4j_repo.candidat_graph(slug)
-        return GraphOut(**build_graph(candidat, rows))
+        return GraphOut(**build_graph(rows))
 
     async def get_candidats_by_competence(self, slug: str) -> Optional[CompetenceCandidatsOut]:
         """R6 — candidats ayant réalisé au moins un projet utilisant la compétence."""
         competence = await self.neo4j_repo.get_competence(slug)
         if competence is None:
             return None
-        candidats = await self.neo4j_repo.candidats_by_competence(slug)
+        candidats = await self.neo4j_repo.get_candidats_by_competence(slug)
         return CompetenceCandidatsOut(skill_slug=slug, nom=competence["nom"], candidats=candidats)
 
     async def get_projets_by_competence(self, slug: str) -> Optional[CompetenceProjetsOut]:
@@ -66,19 +60,24 @@ class GraphService:
         competence = await self.neo4j_repo.get_competence(slug)
         if competence is None:
             return None
-        slugs = await self.neo4j_repo.projets_by_competence(slug)
-        docs = {d["projet_slug"]: d for d in await self.projet_repo.find_by_slugs(slugs)}
+        slugs = await self.neo4j_repo.get_projet_slugs_by_competence(slug)
+        docs = {d["projet_slug"]: d for d in await self.projet_repo.get_projets_by_slugs(slugs)}
         # Ordre de Neo4j conservé ; un projet absent de MongoDB (bases désynchronisées) est ignoré
         projets = [docs[s] for s in slugs if s in docs]
         return CompetenceProjetsOut(skill_slug=slug, nom=competence["nom"], projets=projets)
 
 
-def build_graph(candidat: dict, rows: list[dict]) -> dict:
-    """Construit {nodes, links} sans doublons ; les id sont préfixés par le type (contrat R5)."""
-    cand_id = f"candidat:{candidat['candidat_slug']}"
-    label = " ".join(p for p in (candidat.get("prenom"), candidat.get("nom")) if p)
+def build_graph(rows: list[dict]) -> dict:
+    """Construit {nodes, links} sans doublons à partir des lignes de get_candidat_graph.
+
+    Les id sont préfixés par le type (contrat R5). Une ligne sans projet (candidat sans projet,
+    OPTIONAL MATCH) ou sans compétence ne crée pas de nœud vide.
+    """
+    first = rows[0]
+    cand_id = f"candidat:{first['candidat_slug']}"
+    label = " ".join(p for p in (first.get("prenom"), first.get("nom")) if p) or first["candidat_slug"]
     nodes: dict[str, dict] = {
-        cand_id: {"id": cand_id, "type": "candidat", "slug": candidat["candidat_slug"], "label": label}
+        cand_id: {"id": cand_id, "type": "candidat", "slug": first["candidat_slug"], "label": label}
     }
     links: list[dict] = []
     seen_links: set[tuple[str, str]] = set()
@@ -89,6 +88,8 @@ def build_graph(candidat: dict, rows: list[dict]) -> dict:
             links.append({"source": source, "target": target, "type": type_})
 
     for r in rows:
+        if not r.get("projet_slug"):
+            continue
         projet_id = f"projet:{r['projet_slug']}"
         nodes.setdefault(
             projet_id,
