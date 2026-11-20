@@ -4,6 +4,7 @@ from fastapi.testclient import TestClient
 
 from portfolio_api.main import app
 from portfolio_api.scripts.seed import load_member_files
+from portfolio_api.db.neo4j import get_neo4j_driver
 
 
 def test_health():

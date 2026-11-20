@@ -29,12 +29,12 @@ class CandidatService:
 
     async def search_candidats(self, *, page: int = 1, size: int = 20) -> Page[CandidatSummary]:
         """Liste paginée des candidats."""
-        rows, total = await self.candidat_repo.list_candidats(skip=(page - 1) * size, limit=size)
+        rows, total = await self.candidat_repo.get_candidats(skip=(page - 1) * size, limit=size)
         return Page[CandidatSummary](items=rows, total=total, page=page, size=size)
 
     async def get_candidat_detail(self, slug: str) -> Optional[CandidatOut]:
         """R1 — profil complet + timeline fusionnée."""
-        doc = await self.candidat_repo.get_by_slug(slug)
+        doc = await self.candidat_repo.get_candidat_by_slug(slug)
         if doc is None:
             return None
         return CandidatOut(**{**doc, "timeline": build_timeline(doc)})
