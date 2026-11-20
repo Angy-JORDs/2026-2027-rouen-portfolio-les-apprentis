@@ -7,18 +7,17 @@ Retourne None quand le candidat n'existe pas (la route renvoie alors 404).
 Les sous-objets (timeline, statistiques) sont passés en dict : Pydantic les valide
 dans les modèles imbriqués, quel que soit le nom choisi pour ces classes.
 
-Méthodes attendues des repositories :
-- candidat_repo.get_by_slug(slug) -> dict | None              (projection {"_id": 0})
-- candidat_repo.list_candidats(skip, limit) -> (list[dict], int)  (trié par nom, prénom)
-- projet_repo.find_by_candidat(slug, competence, skip, limit) -> (list[dict], int)
-- projet_repo.count_by_candidat(slug) -> int
-- projet_repo.count_competences(slug) -> list[{"skill_slug", "nombre_projets"}]  (agrégation R3, triée)
+Repositories utilisés (repositories/mongo_candidat_repo.py, repositories/mongo_projet_repo.py) :
+- candidat_repo.get_candidats(page, size) / get_candidat_by_slug(slug)
+- projet_repo.get_projets(candidat_slug, competence, page, size) / count_projets_candidat(slug)
+  / get_competence_stats(slug)
 """
 
 from __future__ import annotations
 
 from typing import Any, Optional
 
+from portfolio_api.core.slugs import normalize_slug
 from portfolio_api.models import CandidatOut, CandidatSummary, Page, ProjetOut, StatsOut
 
 
@@ -42,22 +41,22 @@ class CandidatService:
     async def get_candidat_projets(
         self, slug: str, *, competence: Optional[str] = None, page: int = 1, size: int = 20
     ) -> Optional[Page[ProjetOut]]:
-        """R2 — projets du candidat, filtrables par compétence."""
-        if await self.candidat_repo.get_by_slug(slug) is None:
+        """R2 — projets du candidat, filtrables par compétence (" MongoDB " -> "mongodb")."""
+        if await self.candidat_repo.get_candidat_by_slug(slug) is None:
             return None
-        rows, total = await self.projet_repo.find_by_candidat(
-            slug, competence=competence, skip=(page - 1) * size, limit=size
+        rows, total = await self.projet_repo.get_projets(
+            candidat_slug=slug, competence=normalize_slug(competence), page=page, size=size
         )
         return Page[ProjetOut](items=rows, total=total, page=page, size=size)
 
     async def get_candidat_stats(self, slug: str) -> Optional[StatsOut]:
         """R3 — nombre de projets par compétence (agrégation MongoDB), enrichi des compétences déclarées."""
-        doc = await self.candidat_repo.get_by_slug(slug)
+        doc = await self.candidat_repo.get_candidat_by_slug(slug)
         if doc is None:
             return None
 
-        counts = await self.projet_repo.count_competences(slug)
-        total = await self.projet_repo.count_by_candidat(slug)
+        counts = await self.projet_repo.get_competence_stats(slug)
+        total = await self.projet_repo.count_projets_candidat(slug)
         declared = {c["skill_slug"]: c for c in doc.get("competences") or []}
 
         competences = []

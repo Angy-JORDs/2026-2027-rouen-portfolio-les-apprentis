@@ -1,0 +1,358 @@
+{
+  "candidat_slug": "joel-diangon",
+  "prenom": "Joël",
+  "nom": "Diangon",
+  "titre": "Data Analyst · BI · IA — Apprenti ingénieur Data & IA chez De Rijke (ESIGELEC Big Data)",
+  "bio": "Profil data analytics, business intelligence et intelligence artificielle. Élève-ingénieur à l'ESIGELEC en Big Data pour la Transformation Numérique, en alternance Data & IA chez De Rijke : dashboards Power BI, intégration de données et projets d'IA appliqués au transport et à la logistique. Expérience de Data Analyst junior chez Afriland First Bank (reporting financier automatisé, scoring clients). Objectif : transformer les données en décisions pour la supply chain et la finance.",
+  "liens": {
+    "github": "https://github.com/JoelDIANGON",
+    "linkedin": "https://www.linkedin.com/in/jo%C3%ABl-diangon/"
+  },
+  "experiences": [
+    {
+      "entreprise": "De Rijke France",
+      "poste": "Apprenti ingénieur Data & IA",
+      "debut": "2025-10",
+      "fin": null,
+      "description": "Dashboards Power BI pour les équipes métiers (logistique, transport, qualité, finance, marketing). Intégration de données (ETL, API, fichiers plats), documentation des flux (data catalog, dictionnaire de données), mise en œuvre d'un EDI (XML, JSON, EDIFACT) et projets d'IA appliquée au transport et à la logistique.",
+      "competences": [
+        "power-bi",
+        "dax",
+        "sql",
+        "python",
+        "etl",
+        "ssis",
+        "microsoft-fabric",
+        "edi",
+        "data-catalog",
+        "machine-learning"
+      ]
+    },
+    {
+      "entreprise": "Pierre et Vacances",
+      "poste": "Réceptionniste (job saisonnier)",
+      "debut": "2025-07",
+      "fin": "2025-08",
+      "description": "Accueil d'une clientèle internationale dans une résidence 5 étoiles à Arc 1950 : check-in/check-out, conseil, gestion des réclamations, au sein d'une équipe de 50+ personnes.",
+      "competences": []
+    },
+    {
+      "entreprise": "Complétude",
+      "poste": "Assistant pédagogique",
+      "debut": "2024-10",
+      "fin": "2025-05",
+      "description": "Accompagnement de lycéens (Seconde à Terminale, filières scientifiques) en mathématiques, physique, informatique et chimie, et préparation au Bac.",
+      "competences": []
+    },
+    {
+      "entreprise": "Afriland First Bank",
+      "poste": "Junior Data Analyst (stage)",
+      "debut": "2024-06",
+      "fin": "2024-08",
+      "description": "Tableaux de bord KPI interactifs, modèle de scoring clients (+10 % de fidélisation, -15 % de coûts marketing), automatisation du reporting financier sous Power BI (-30 % de temps d'analyse) et suivi des transactions en temps réel (200+ transactions suspectes détectées par mois).",
+      "competences": [
+        "power-bi",
+        "machine-learning",
+        "statistiques"
+      ]
+    },
+    {
+      "entreprise": "Société Immobilière du Cameroun",
+      "poste": "Stagiaire projet",
+      "debut": "2022-06",
+      "fin": "2022-08",
+      "description": "Enquêtes de terrain et collecte de données statistiques, analyse des tendances et corrélations, présentation des résultats et recommandations à la direction.",
+      "competences": [
+        "statistiques"
+      ]
+    },
+    {
+      "entreprise": "AFEV Rouen",
+      "poste": "Mentor (bénévole)",
+      "debut": "2024-10",
+      "fin": null,
+      "description": "Accompagnement d'un élève avec des activités ludiques et éducatives pour renforcer ses compétences.",
+      "competences": []
+    },
+    {
+      "entreprise": "Club informatique ESIGELEC",
+      "poste": "Membre",
+      "debut": "2024-11",
+      "fin": null,
+      "description": "Développement d'une application web de gestion des dominantes des étudiants.",
+      "competences": [
+        "php",
+        "html",
+        "css",
+        "javascript",
+        "mysql",
+        "sql",
+        "git"
+      ]
+    }
+  ],
+  "formations": [
+    {
+      "ecole": "ESIGELEC",
+      "diplome": "Diplôme d'ingénieur — Big Data pour la Transformation Numérique",
+      "debut": "2024-09",
+      "fin": "2027-09"
+    },
+    {
+      "ecole": "PrépaVogt",
+      "diplome": "Classe préparatoire aux grandes écoles — MPSI",
+      "debut": "2022-09",
+      "fin": "2024-05"
+    }
+  ],
+  "competences": [
+    {
+      "skill_slug": "python",
+      "nom": "Python",
+      "domaine": "langages",
+      "niveau": 4
+    },
+    {
+      "skill_slug": "sql",
+      "nom": "SQL",
+      "domaine": "langages",
+      "niveau": 4
+    },
+    {
+      "skill_slug": "dax",
+      "nom": "DAX",
+      "domaine": "langages",
+      "niveau": 3
+    },
+    {
+      "skill_slug": "power-bi",
+      "nom": "Power BI",
+      "domaine": "bi",
+      "niveau": 4
+    },
+    {
+      "skill_slug": "pandas",
+      "nom": "Pandas",
+      "domaine": "frameworks",
+      "niveau": 4
+    },
+    {
+      "skill_slug": "scikit-learn",
+      "nom": "Scikit-learn",
+      "domaine": "frameworks",
+      "niveau": 3
+    },
+    {
+      "skill_slug": "tensorflow",
+      "nom": "TensorFlow",
+      "domaine": "frameworks",
+      "niveau": 2
+    },
+    {
+      "skill_slug": "fastapi",
+      "nom": "FastAPI",
+      "domaine": "frameworks",
+      "niveau": 2
+    },
+    {
+      "skill_slug": "machine-learning",
+      "nom": "Machine Learning",
+      "domaine": "data-ia",
+      "niveau": 3
+    },
+    {
+      "skill_slug": "statistiques",
+      "nom": "Analyse statistique",
+      "domaine": "data-ia",
+      "niveau": 3
+    },
+    {
+      "skill_slug": "etl",
+      "nom": "ETL & pipelines de données",
+      "domaine": "data-engineering",
+      "niveau": 3
+    },
+    {
+      "skill_slug": "ssis",
+      "nom": "SSIS",
+      "domaine": "data-engineering",
+      "niveau": 2
+    },
+    {
+      "skill_slug": "microsoft-fabric",
+      "nom": "Microsoft Fabric",
+      "domaine": "data-engineering",
+      "niveau": 2
+    },
+    {
+      "skill_slug": "edi",
+      "nom": "EDI (XML, JSON, EDIFACT)",
+      "domaine": "data-engineering",
+      "niveau": 3
+    },
+    {
+      "skill_slug": "data-catalog",
+      "nom": "Data Catalog & documentation",
+      "domaine": "data-engineering",
+      "niveau": 3
+    },
+    {
+      "skill_slug": "mongodb",
+      "nom": "MongoDB",
+      "domaine": "bases-de-donnees",
+      "niveau": 2
+    },
+    {
+      "skill_slug": "neo4j",
+      "nom": "Neo4j",
+      "domaine": "bases-de-donnees",
+      "niveau": 2
+    },
+    {
+      "skill_slug": "git",
+      "nom": "Git",
+      "domaine": "outils",
+      "niveau": 3
+    },
+    {
+      "skill_slug": "jupyter",
+      "nom": "Jupyter",
+      "domaine": "outils",
+      "niveau": 4
+    },
+    {
+      "skill_slug": "numpy",
+      "nom": "NumPy",
+      "domaine": "frameworks",
+      "niveau": 3
+    },
+    {
+      "skill_slug": "matplotlib",
+      "nom": "Matplotlib",
+      "domaine": "frameworks",
+      "niveau": 3
+    },
+    {
+      "skill_slug": "seaborn",
+      "nom": "Seaborn",
+      "domaine": "frameworks",
+      "niveau": 3
+    },
+    {
+      "skill_slug": "pytorch",
+      "nom": "PyTorch",
+      "domaine": "frameworks",
+      "niveau": 1
+    },
+    {
+      "skill_slug": "mysql",
+      "nom": "MySQL",
+      "domaine": "bases-de-donnees",
+      "niveau": 3
+    },
+    {
+      "skill_slug": "power-query",
+      "nom": "Power Query",
+      "domaine": "bi",
+      "niveau": 3
+    },
+    {
+      "skill_slug": "tableau",
+      "nom": "Tableau",
+      "domaine": "bi",
+      "niveau": 2
+    },
+    {
+      "skill_slug": "excel",
+      "nom": "Excel (VBA, Power Query)",
+      "domaine": "outils",
+      "niveau": 3
+    },
+    {
+      "skill_slug": "r",
+      "nom": "R",
+      "domaine": "langages",
+      "niveau": 2
+    },
+    {
+      "skill_slug": "java",
+      "nom": "Java",
+      "domaine": "langages",
+      "niveau": 2
+    },
+    {
+      "skill_slug": "c",
+      "nom": "C",
+      "domaine": "langages",
+      "niveau": 2
+    },
+    {
+      "skill_slug": "uml",
+      "nom": "UML",
+      "domaine": "gestion-de-projet",
+      "niveau": 3
+    },
+    {
+      "skill_slug": "agile-scrum",
+      "nom": "Méthodes Agile / Scrum",
+      "domaine": "gestion-de-projet",
+      "niveau": 3
+    },
+    {
+      "skill_slug": "trello",
+      "nom": "Trello",
+      "domaine": "gestion-de-projet",
+      "niveau": 3
+    },
+    {
+      "skill_slug": "teams",
+      "nom": "Microsoft Teams",
+      "domaine": "gestion-de-projet",
+      "niveau": 3
+    },
+    {
+      "skill_slug": "php",
+      "nom": "PHP",
+      "domaine": "developpement-web",
+      "niveau": 2
+    },
+    {
+      "skill_slug": "html",
+      "nom": "HTML",
+      "domaine": "developpement-web",
+      "niveau": 3
+    },
+    {
+      "skill_slug": "css",
+      "nom": "CSS",
+      "domaine": "developpement-web",
+      "niveau": 3
+    },
+    {
+      "skill_slug": "javascript",
+      "nom": "JavaScript",
+      "domaine": "developpement-web",
+      "niveau": 2
+    }
+  ],
+  "certifications": [
+    {
+      "nom": "Data Science et Machine Learning — MasterClass Python",
+      "statut": "obtenue"
+    },
+    {
+      "nom": "Microsoft Certified: Power BI Data Analyst Associate",
+      "statut": "en cours"
+    }
+  ],
+  "langues": [
+    {
+      "langue": "Français",
+      "niveau": "Langue maternelle"
+    },
+    {
+      "langue": "Anglais",
+      "niveau": "B1"
+    }
+  ]
+}

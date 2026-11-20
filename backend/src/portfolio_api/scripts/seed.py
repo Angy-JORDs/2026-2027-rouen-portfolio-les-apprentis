@@ -4,13 +4,34 @@ Exigences (évaluées au Jalon 2) :
 - 1 seule commande : `just seed`
 - idempotent : relancer le seed ne crée pas de doublons (les deux bases sont reconstruites depuis data/)
 - reproductible sur une machine neuve après `just up`
+
+Le seed est générique : il charge tout ce qui se trouve dans data/candidats/*.json et
+data/projets/*.json, sans rien coder en dur. Pour ajouter ou modifier une donnée, on édite
+le JSON puis on relance `just seed` — aucune ligne de code à écrire.
+
+Étapes :
+1. prepare()   : normalise les slugs pivots (" MongoDB " -> "mongodb") et valide les données ;
+                 en cas d'erreur, aucune base n'est modifiée.
+2. seed_mongo  : vide puis recharge les collections, crée les index (ARCHITECTURE.md §3).
+3. seed_neo4j  : contraintes, puis graphe Candidat -[:REALISE]-> Projet -[:UTILISE]-> Competence (§4).
+
+Idempotence : chaque lancement vide puis recharge les collections MongoDB et les nœuds
+Candidat / Projet / Competence de Neo4j. Les bases reflètent donc exactement le dossier data/
+(une donnée retirée du JSON disparaît aussi des bases).
 """
 
 from __future__ import annotations
 
 import asyncio
+import copy
 import json
+import sys
 from pathlib import Path
+from typing import Any
+
+from portfolio_api.core.slugs import normalize_slug
+from portfolio_api.db.mongo import close_mongo, get_mongo_db
+from portfolio_api.db.neo4j import close_neo4j, get_neo4j_driver
 
 from portfolio_api.db.mongo import close_mongo, get_mongo_db
 from portfolio_api.db.neo4j import close_neo4j, get_neo4j_driver
@@ -224,6 +245,53 @@ async def seed_neo4j(candidats: list[dict], projets: list[dict]) -> None:
         )
     print("[seed] Neo4j — OK")
 
+    async with get_neo4j_driver().session() as session:
+        for query in CONSTRAINTS:
+            await session.run(query)
+
+        # Vider uniquement les nœuds gérés par le seed
+        await session.run("MATCH (n) WHERE n:Candidat OR n:Projet OR n:Competence DETACH DELETE n")
+
+        # UNWIND : une requête par type au lieu d'une par élément
+        await session.run(
+            "UNWIND $rows AS row "
+            "MERGE (c:Candidat {candidat_slug: row.candidat_slug}) "
+            "SET c.prenom = row.prenom, c.nom = row.nom, c.titre = row.titre",
+            rows=[{k: c.get(k) for k in ("candidat_slug", "prenom", "nom", "titre")} for c in candidats],
+        )
+        await session.run(
+            "UNWIND $rows AS row "
+            "MERGE (p:Projet {projet_slug: row.projet_slug}) "
+            "SET p.titre = row.titre",
+            rows=[{"projet_slug": p["projet_slug"], "titre": p["titre"]} for p in projets],
+        )
+        await session.run(
+            "UNWIND $rows AS row "
+            "MERGE (s:Competence {skill_slug: row.skill_slug}) "
+            "SET s.nom = row.nom, s.domaine = row.domaine",
+            rows=competences,
+        )
+        # MATCH (et non MERGE) sur les extrémités : un candidat inconnu ne crée pas de nœud fantôme
+        await session.run(
+            "UNWIND $rows AS row "
+            "MATCH (c:Candidat {candidat_slug: row.candidat}), (p:Projet {projet_slug: row.projet}) "
+            "MERGE (c)-[:REALISE]->(p)",
+            rows=realise,
+        )
+        await session.run(
+            "UNWIND $rows AS row "
+            "MATCH (p:Projet {projet_slug: row.projet}), (s:Competence {skill_slug: row.skill}) "
+            "MERGE (p)-[:UTILISE]->(s)",
+            rows=utilise,
+        )
+
+    print(
+        f"[seed] Neo4j : {len(candidats)} candidat(s), {len(projets)} projet(s), "
+        f"{len(competences)} compétence(s), {len(realise)} REALISE, {len(utilise)} UTILISE"
+    )
+
+
+# --------------------------------------------------------------------------- point d'entrée
 
 async def main() -> None:
     candidats, projets, warnings = prepare(
