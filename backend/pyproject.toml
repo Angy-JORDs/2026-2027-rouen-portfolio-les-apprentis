@@ -8,9 +8,8 @@ dependencies = [
     "uvicorn[standard]>=0.27",
     "pydantic>=2.5",
     "pydantic-settings>=2.1",
-    # MongoDB : PyMongo Async (successeur officiel de Motor, déprécié depuis 2025).
-    # L'API est quasi identique à Motor : AsyncMongoClient(...)[db][collection], await find_one(...), etc.
-    "pymongo>=4.13",
+    # MongoDB : Motor (async), comme dans SmartCity
+    "motor>=3.3",
     "neo4j>=5.15",
 ]
 
