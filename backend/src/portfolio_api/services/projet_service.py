@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
+from portfolio_api.core.slugs import normalize_slug
 from portfolio_api.models import Page, ProjetOut
 
 
@@ -22,8 +23,10 @@ class ProjetService:
     async def search_projets(
         self, *, competence: Optional[str] = None, page: int = 1, size: int = 20
     ) -> Page[ProjetOut]:
-        """Galerie de tous les projets, filtrable par compétence."""
-        rows, total = await self.projet_repo.get_projets(competence=competence, page=page, size=size)
+        """Galerie de tous les projets, filtrable par compétence (" Python " -> "python")."""
+        rows, total = await self.projet_repo.get_projets(
+            competence=normalize_slug(competence), page=page, size=size
+        )
         return Page[ProjetOut](items=rows, total=total, page=page, size=size)
 
     async def get_projet_detail(self, slug: str) -> Optional[ProjetOut]:
