@@ -1,0 +1,7 @@
+# Fichiers à ne PAS envoyer à Vercel (vercel deploy --cwd frontends/frontend-JoelDIANGON) :
+# Vercel réinstalle les dépendances et reconstruit le site lui-même.
+node_modules
+dist
+.vercel
+.env
+.env.*

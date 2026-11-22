@@ -486,3 +486,6 @@ Fourni. Réponse : `{"status": "ok"}` (ne contacte pas les bases).
 - Supprime le projet dans MongoDB **et** dans Neo4j (nœud et relations). Réponse : `204` sans corps.
 - Rejouable : si le projet n'existe plus que dans l'une des deux bases, il est supprimé de celle-ci. `404` seulement s'il n'existe dans aucune.
 - Aucune authentification n'est exigée.
+- **API déployée publiquement** : avec la variable d'environnement `READ_ONLY=true`, la route répond
+  `403 {"detail": "API en lecture seule : la suppression est désactivée"}` et ne modifie aucune base.
+  Par défaut (`READ_ONLY` absente ou `false`), le comportement ci-dessus est inchangé.

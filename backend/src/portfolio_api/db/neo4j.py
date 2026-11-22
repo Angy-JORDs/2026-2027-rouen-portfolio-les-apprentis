@@ -18,6 +18,9 @@ def get_neo4j_driver() -> AsyncDriver:
             settings.neo4j_uri,
             auth=(settings.neo4j_user, settings.neo4j_password),
             connection_timeout=5,  # base arrêtée : échouer vite (503) plutôt qu'attendre 30 s
+            # Connexion inactive depuis plus de 60 s : vérifiée avant usage (instance serverless
+            # mise en pause, Aura qui coupe les connexions oisives).
+            liveness_check_timeout=60,
         )
     return _driver
  
