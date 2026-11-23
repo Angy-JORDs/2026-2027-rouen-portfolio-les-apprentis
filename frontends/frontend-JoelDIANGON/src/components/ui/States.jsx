@@ -35,8 +35,3 @@ export function ErrorState({ error, onRetry, children }) {
     </div>
   )
 }
-
-/** Petite mention de la source des données (route de API_ROUTES.md et base interrogée). */
-export function Source({ children }) {
-  return <p className="source">{children}</p>
-}

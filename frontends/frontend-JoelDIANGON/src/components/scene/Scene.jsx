@@ -4,14 +4,15 @@ import { SECTIONS, SECTION_BY_ID } from '../../content/sections'
 import { useCandidat } from '../../context/CandidatContext'
 import { useMediaQuery } from '../../hooks/useMediaQuery'
 import { ArrowRightIcon } from '../icons'
+import RecruiterSearch from '../search/RecruiterSearch'
 import Backdrop from './Backdrop'
-import Boy from './Boy'
+import Bust from './Bust'
 import SceneObject from './SceneObject'
 
 const EASE = [0.22, 1, 0.36, 1]
 
 /**
- * Écran d'accueil : le garçon face aux éléments de son parcours.
+ * Écran d'accueil : le personnage, vu de dos, face au couloir et aux éléments de son parcours.
  * Quand une section s'ouvre, la scène « plonge » vers l'élément choisi (zoom centré sur lui).
  */
 export default function Scene({ activeId, onOpen }) {
@@ -26,7 +27,7 @@ export default function Scene({ activeId, onOpen }) {
 
   const focus = hovered ? SECTION_BY_ID[hovered] : null
   const lookAt = focus?.pos ? (focus.pos.x - 50) / 34 : 0
-  const accroche = candidat?.titre?.split(' — ')[0]
+  const accroche = candidat?.titre?.split(',')[0]
 
   return (
     <motion.main
@@ -45,7 +46,7 @@ export default function Scene({ activeId, onOpen }) {
         transition={{ duration: 1.2, delay: 0.2 }}
       >
         <span className="scene-brand-name">{candidat ? `${candidat.prenom} ${candidat.nom}` : 'Joël Diangon'}</span>
-        <span className="scene-brand-role">{accroche || 'Data · BI · IA'}</span>
+        <span className="scene-brand-role">{accroche || 'Ingénieur Data · BI · IA'}</span>
       </motion.p>
 
       <motion.header
@@ -56,7 +57,7 @@ export default function Scene({ activeId, onOpen }) {
       >
         <h1 className="scene-title">Mon parcours</h1>
         <p className="scene-subtitle">Chaque expérience façonne la suite.</p>
-        <button type="button" className="scene-link" onClick={() => onOpen('parcours')}>
+        <button type="button" className="scene-link" onClick={() => onOpen('portfolio')}>
           Voir la chronologie complète <ArrowRightIcon />
         </button>
       </motion.header>
@@ -76,16 +77,21 @@ export default function Scene({ activeId, onOpen }) {
       </div>
 
       <motion.div
-        className="boy-stage"
-        initial={{ opacity: 0, y: 26 }}
+        className="bust-stage"
+        initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1.4, delay: 0.1, ease: EASE }}
+        transition={{ duration: 1.6, delay: 0.1, ease: EASE }}
       >
-        <div className="platform" aria-hidden="true">
-          <span className="platform-ring" />
-          <span className="platform-ring platform-ring--outer" />
-        </div>
-        <Boy lookAt={lookAt} />
+        <Bust lookAt={lookAt} />
+      </motion.div>
+
+      <motion.div
+        className="scene-search"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1, delay: 1.8, ease: EASE }}
+      >
+        <RecruiterSearch onNavigate={onOpen} />
       </motion.div>
 
       <motion.p
@@ -95,7 +101,7 @@ export default function Scene({ activeId, onOpen }) {
         transition={{ duration: 1, delay: 2.2 }}
       >
         <span className="scene-hint-dot" aria-hidden="true" />
-        {isMobile ? 'Touchez un élément pour l’explorer' : 'Survolez les éléments — cliquez pour explorer'}
+        {isMobile ? 'Touchez un élément pour l’explorer' : 'Survolez les éléments, cliquez pour explorer'}
       </motion.p>
     </motion.main>
   )

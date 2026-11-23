@@ -13,76 +13,44 @@
   pointer-events: none;
 }
 
-.bg-glow {
+/* Fond : salle de serveurs (Pixabay, Vlad_Aivazovsky, Pixabay Content License, usage libre),
+   légèrement floutée et assombrie, zoom très lent. Dégradé bleu en dessous si l'image est absente. */
+.bg-photo {
   position: absolute;
-  left: 50%;
-  top: 38%;
-  width: 95vmax;
-  height: 62vmax;
-  translate: -50% -50%;
-  background: radial-gradient(closest-side, rgba(63, 124, 172, 0.2), rgba(63, 124, 172, 0.05) 55%, transparent);
+  inset: -3%;
+  background:
+    url('/fond-salle-serveurs.webp') center 50% / cover no-repeat,
+    linear-gradient(180deg, var(--bg-0), var(--bg-2));
+  filter: blur(1.4px) saturate(0.92) brightness(0.8);
+  transform-origin: 50% 55%;
+  animation: drift-zoom 45s ease-in-out infinite alternate;
 }
 
-.bg-horizon {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 62%;
-  height: 1px;
-  background: linear-gradient(90deg, transparent 5%, rgba(156, 195, 218, 0.4) 50%, transparent 95%);
-  box-shadow: 0 0 48px 10px rgba(111, 168, 201, 0.12);
-}
-
-.floor-grid {
+/* Voile : assombrit les bords et le bas (lisibilité du titre, des éléments et des libellés). */
+.bg-veil {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  stroke: rgba(156, 195, 218, 0.09);
-  stroke-width: 1;
-  -webkit-mask-image: linear-gradient(180deg, transparent 62%, #000 80%, #000 100%);
-  mask-image: linear-gradient(180deg, transparent 62%, #000 80%, #000 100%);
+  background:
+    radial-gradient(ellipse 72% 62% at 50% 50%, transparent 30%, rgba(4, 10, 18, 0.62) 100%),
+    linear-gradient(180deg, rgba(4, 10, 18, 0.5) 0%, transparent 24%, transparent 56%, rgba(4, 10, 18, 0.78) 100%);
 }
 
-.bg-orbit {
+/* Grain photographique très léger : unifie la photo et l'illustration du personnage. */
+.bg-grain {
   position: absolute;
-  left: 50%;
-  top: 40%;
-  width: min(80vw, 1120px);
-  aspect-ratio: 1;
-  translate: -50% -50%;
-  border-radius: 50%;
-  border: 1px solid rgba(156, 195, 218, 0.045);
+  inset: 0;
+  opacity: 0.07;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
 }
 
-.bg-orbit--inner {
-  width: min(48vw, 660px);
-  border-color: rgba(140, 197, 168, 0.05);
-  border-top-color: rgba(140, 197, 168, 0.16);
-  animation: spin 140s linear infinite;
-}
-
-.bg-shape {
-  position: absolute;
-  width: 9px;
-  height: 9px;
-  border: 1px solid rgba(156, 195, 218, 0.22);
-  rotate: 45deg;
-  animation: hover-y 9s ease-in-out infinite;
-}
-
-.bg-shape--a {
-  left: 7%;
-  top: 76%;
-}
-
-.bg-shape--b {
-  right: 8%;
-  top: 72%;
-  width: 6px;
-  height: 6px;
-  border-color: rgba(140, 197, 168, 0.25);
-  animation-delay: -4s;
+@keyframes drift-zoom {
+  from {
+    scale: 1;
+  }
+  to {
+    scale: 1.06;
+  }
 }
 
 .particles {
@@ -192,9 +160,24 @@
 }
 
 .scene-brand-role {
-  font-size: 0.78rem;
-  color: var(--text-faint);
+  font-size: 0.8rem;
+  color: var(--text-dim);
   letter-spacing: 0.04em;
+}
+
+/* Textes posés directement sur la photo : ombre portée pour les détacher des néons. */
+.scene-brand,
+.scene-intro,
+.scene-hint,
+.nav-link {
+  text-shadow: var(--text-shadow);
+}
+
+/* Le titre est en dégradé (texte transparent) : une text-shadow transparaîtrait dans les lettres,
+   on passe donc par un drop-shadow. */
+.scene-title {
+  text-shadow: none;
+  filter: drop-shadow(0 2px 12px rgba(0, 0, 0, 0.6));
 }
 
 .scene-title {
@@ -224,7 +207,7 @@
   font-size: 0.8rem;
   letter-spacing: 0.04em;
   color: var(--green);
-  opacity: 0.85;
+  font-weight: 500;
   transition:
     opacity 0.3s,
     gap 0.3s var(--ease);
@@ -248,9 +231,9 @@
   display: flex;
   align-items: center;
   gap: 0.65rem;
-  font-size: 0.74rem;
+  font-size: 0.76rem;
   letter-spacing: 0.08em;
-  color: var(--text-faint);
+  color: var(--text-dim);
 }
 
 .scene-hint-dot {
@@ -272,58 +255,51 @@
   }
 }
 
-/* ------------------------------------------------------------------ le garçon */
-.boy-stage {
+/* ------------------------------------------------------------------ le personnage (buste, vu de dos) */
+/* Coupé par le bas de l'écran : seuls la tête, la nuque, les épaules et le haut du dos sont visibles. */
+.bust-stage {
   position: absolute;
   z-index: 3;
   left: 50%;
-  bottom: 2.5vh;
-  height: clamp(210px, 37vh, 380px);
-  aspect-ratio: 1 / 2;
+  bottom: 0;
+  height: clamp(250px, 48vh, 480px);
+  aspect-ratio: 900 / 916;
   translate: -50% 0;
+  pointer-events: none;
 }
 
-.boy {
-  position: relative;
+/* Le buste s'oriente doucement vers l'élément survolé (--turn fixé par Bust.jsx). */
+.bust {
   width: 100%;
   height: 100%;
-  overflow: visible;
-  filter: drop-shadow(0 0 26px rgba(111, 168, 201, 0.12));
+  perspective: 1200px;
 }
 
-.platform {
-  position: absolute;
-  left: 50%;
-  bottom: -3%;
-  width: 190%;
-  aspect-ratio: 5 / 1;
-  translate: -50% 0;
+.bust img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: 50% 100%;
+  user-select: none;
+  transform-origin: 50% 100%;
+  rotate: y var(--turn, 0deg);
+  transition: rotate 1.4s var(--ease);
+  animation: breathe-bust 6s ease-in-out infinite;
+  /* Photo de studio fondue dans la salle de serveurs : noir et blanc, éclairage baissé,
+     léger contre-jour et bas du dos dans l'ombre. */
+  filter: grayscale(1) brightness(0.7) contrast(1.08)
+    drop-shadow(0 0 14px rgba(120, 180, 225, 0.18));
+  mask-image: linear-gradient(180deg, #000 55%, rgba(0, 0, 0, 0.55) 85%, rgba(0, 0, 0, 0.15) 100%);
 }
 
-.platform-ring {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  border: 1px solid rgba(140, 197, 168, 0.28);
-  box-shadow:
-    inset 0 0 30px rgba(140, 197, 168, 0.08),
-    0 0 30px rgba(111, 168, 201, 0.08);
-  animation: breathe 6s ease-in-out infinite;
-}
-
-.platform-ring--outer {
-  inset: -22% -16%;
-  border-color: rgba(156, 195, 218, 0.1);
-  animation-delay: -3s;
-}
-
-@keyframes breathe {
+@keyframes breathe-bust {
   0%,
   100% {
-    opacity: 0.65;
+    scale: 1 1;
   }
   50% {
-    opacity: 1;
+    scale: 1.004 1.01;
   }
 }
 
@@ -372,16 +348,18 @@
   height: var(--orb);
   border-radius: 50%;
   color: var(--blue-mist);
+  /* verre sombre : reste lisible sur la photo du couloir */
   background: radial-gradient(
     circle at 34% 28%,
-    rgba(156, 195, 218, 0.17),
-    rgba(14, 30, 45, 0.55) 58%,
-    rgba(8, 18, 28, 0.72)
+    rgba(156, 195, 218, 0.2),
+    rgba(10, 22, 34, 0.78) 58%,
+    rgba(6, 14, 22, 0.88)
   );
-  border: 1px solid var(--line-strong);
+  border: 1px solid rgba(156, 195, 218, 0.38);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.07),
-    0 12px 32px rgba(0, 0, 0, 0.38);
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 0 0 4px rgba(6, 14, 22, 0.25),
+    0 12px 32px rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(6px);
   transition:
     color 0.45s var(--ease),
@@ -463,6 +441,7 @@
   font-family: var(--font-display);
   font-size: 0.92rem;
   color: var(--text);
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.9);
 }
 
 .orb-label-sub {
@@ -470,6 +449,7 @@
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--green);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.9);
 }
 
 .orb-float:hover .orb-label,
@@ -497,10 +477,11 @@
 .nav-link {
   position: relative;
   padding: 0.3rem 0;
-  font-size: 0.68rem;
-  letter-spacing: 0.16em;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--text-faint);
+  color: var(--text-dim);
   transition: color 0.3s var(--ease);
 }
 
@@ -598,6 +579,9 @@
   .scene-intro {
     max-width: 17rem;
   }
+  .bust-stage {
+    height: clamp(230px, 40vh, 400px);
+  }
 }
 
 /* ------------------------------------------------------------------ mobile : scène simplifiée */
@@ -666,11 +650,11 @@
     display: none;
   }
 
-  .boy-stage {
-    height: clamp(150px, 24vh, 220px);
-    bottom: 3rem;
+  .bust-stage {
+    height: clamp(190px, 31vh, 290px);
   }
 
+  /* Sur mobile, l'indication se pose sur le bas (sombre) du buste. */
   .scene-hint {
     left: 50%;
     right: auto;
@@ -678,6 +662,8 @@
     translate: -50% 0;
     white-space: nowrap;
     font-size: 0.68rem;
+    color: var(--text-dim);
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.8);
   }
 }
 
@@ -685,7 +671,88 @@
   .scene-brand {
     display: none;
   }
-  .boy-stage {
-    height: 20vh;
+  .bust-stage {
+    height: 26vh;
   }
+}
+
+/* ------------------------------------------------------------------ actions en haut à droite (CV, thème) */
+.nav {
+  display: flex;
+  align-items: center;
+  gap: clamp(1rem, 1.6vw, 1.6rem);
+}
+
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  height: 34px;
+  padding: 0 0.85rem;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
+  color: var(--text);
+  text-decoration: none;
+  transition:
+    border-color 0.3s,
+    background 0.3s;
+}
+
+.action-btn:hover {
+  border-color: rgba(140, 197, 168, 0.55);
+  background: rgba(140, 197, 168, 0.12);
+}
+
+.action-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.action-btn--cv {
+  color: var(--green);
+}
+
+.action-btn--large {
+  height: auto;
+  padding: 0.6rem 1.1rem;
+  font-size: 0.88rem;
+}
+
+.nav-mobile-bar {
+  position: fixed;
+  z-index: 55;
+  top: clamp(1rem, 3.5vh, 1.8rem);
+  right: clamp(1rem, 4vw, 2rem);
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.nav-mobile-bar .nav-toggle {
+  position: static;
+}
+
+/* L'indication « Survolez… » laisse la place à la recherche sur les petits écrans. */
+@media (max-width: 1100px) {
+  .scene-hint {
+    display: none;
+  }
+}
+
+
+/* Icônes React Icons (Lucide) : trait affiné pour rester dans le style « verre » des bulles. */
+.orb-icon,
+.panel-icon svg {
+  stroke-width: 1.6;
 }

@@ -8,12 +8,12 @@ export function formatMonth(value) {
   return `${MOIS[Number(month) - 1] ?? month} ${year}`
 }
 
-/** Période lisible : "oct. 2025 — aujourd'hui", "déc. 2024 — févr. 2025", "août 2025". */
+/** Période lisible : "oct. 2025 - aujourd'hui", "déc. 2024 - févr. 2025", "août 2025". */
 export function formatPeriod(debut, fin) {
   const start = formatMonth(debut)
   const end = fin ? formatMonth(fin) : null
-  if (start && end) return start === end ? start : `${start} — ${end}`
-  if (start) return `${start} — aujourd'hui`
+  if (start && end) return start === end ? start : `${start} - ${end}`
+  if (start) return `${start} - aujourd'hui`
   return end || ''
 }
 

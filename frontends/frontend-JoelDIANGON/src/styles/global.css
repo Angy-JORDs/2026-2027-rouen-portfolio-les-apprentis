@@ -15,9 +15,11 @@
   --gray: #8a9aa8;
 
   /* texte */
-  --text: #e4edf2;
-  --text-dim: #a3b4c1;
-  --text-faint: #6f8293;
+  /* contrastes relevés : texte posé sur une photo, il doit rester lisible partout */
+  --text: #eef4f8;
+  --text-dim: #c2d0da;
+  --text-faint: #98aab8;
+  --text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7), 0 0 14px rgba(0, 0, 0, 0.55);
 
   /* matières */
   --line: rgba(156, 195, 218, 0.14);
@@ -234,13 +236,6 @@ code {
   margin-top: 0.3rem;
 }
 
-.source {
-  margin-top: 1.4rem;
-  font-size: 0.72rem;
-  letter-spacing: 0.04em;
-  color: var(--text-faint);
-}
-
 .empty {
   color: var(--text-faint);
   font-size: 0.9rem;
@@ -251,18 +246,18 @@ code {
 .api-banner {
   position: fixed;
   left: 50%;
-  bottom: 1.2rem;
+  top: 4.6rem;
   z-index: 60;
   display: flex;
   align-items: center;
-  gap: 1rem;
-  max-width: min(92vw, 640px);
-  padding: 0.7rem 0.8rem 0.7rem 1.2rem;
+  gap: 0.8rem;
+  max-width: min(92vw, 560px);
+  padding: 0.4rem 0.5rem 0.4rem 1rem;
   border-radius: 999px;
   border: 1px solid rgba(214, 160, 140, 0.3);
   background: var(--glass-strong);
   backdrop-filter: blur(14px);
-  font-size: 0.82rem;
+  font-size: 0.76rem;
   color: var(--text-dim);
   translate: -50% 0;
 }

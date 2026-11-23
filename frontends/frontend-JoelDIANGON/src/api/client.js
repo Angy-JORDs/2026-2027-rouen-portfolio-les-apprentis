@@ -1,5 +1,5 @@
 /**
- * Accès à l'API d'équipe — une fonction par route de API_ROUTES.md utilisée par ce frontend.
+ * Accès à l'API d'équipe : une fonction par route de API_ROUTES.md utilisée par ce frontend.
  * Les routes listant d'autres candidats (GET /api/candidats, R6) ne sont volontairement pas utilisées :
  * ce portfolio est personnel.
  */
@@ -41,22 +41,22 @@ async function get(path, params = {}) {
 const enc = encodeURIComponent
 
 export const api = {
-  /** R1 — profil, expériences, formations, compétences déclarées, timeline. */
+  /** R1 : profil, expériences, formations, compétences déclarées, timeline. */
   candidat: (slug = CANDIDAT_SLUG) => get(`/api/candidats/${enc(slug)}`),
 
-  /** R2 — projets du candidat, filtrables par compétence (pagination large : un portfolio a peu de projets). */
+  /** R2 : projets du candidat, filtrables par compétence (pagination large : un portfolio a peu de projets). */
   projets: ({ competence, page = 1, size = 100 } = {}, slug = CANDIDAT_SLUG) =>
     get(`/api/candidats/${enc(slug)}/projets`, { competence, page, size }),
 
-  /** R3 — nombre de projets par compétence (agrégation MongoDB). */
+  /** R3 : nombre de projets par compétence (agrégation MongoDB). */
   stats: (slug = CANDIDAT_SLUG) => get(`/api/candidats/${enc(slug)}/stats`),
 
-  /** R4 — projets similaires (compétences partagées, Neo4j). */
+  /** R4 : projets similaires (compétences partagées, Neo4j). */
   similaires: (projetSlug, limit = 6) => get(`/api/graph/projets/${enc(projetSlug)}/similaires`, { limit }),
 
-  /** R5 — graphe Candidat → Projets → Compétences, prêt à afficher. */
+  /** R5 : graphe Candidat → Projets → Compétences, prêt à afficher. */
   graphe: (slug = CANDIDAT_SLUG) => get(`/api/graph/competences/${enc(slug)}`),
 
-  /** R8 — fiche détaillée d'un projet. */
+  /** R8 : fiche détaillée d'un projet. */
   projet: (projetSlug) => get(`/api/projets/${enc(projetSlug)}`),
 }

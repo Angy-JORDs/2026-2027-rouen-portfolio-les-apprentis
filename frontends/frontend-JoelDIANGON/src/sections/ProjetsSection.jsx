@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { api } from '../api/client'
 import Tags from '../components/ui/Tags'
-import { ErrorState, Loader, Source } from '../components/ui/States'
+import { ErrorState, Loader } from '../components/ui/States'
 import { useCandidat } from '../context/CandidatContext'
 import { useAsync } from '../hooks/useAsync'
 import { formatPeriod, humanizeKey, truncate } from '../lib/format'
@@ -83,10 +83,7 @@ function ProjetsGallery({ competence, navigate }) {
       )}
       {!filtres.loading && !filtres.error && projets.length === 0 && (
         <p className="empty">Aucun projet n’utilise cette compétence.</p>
-      )}
-      <Source>
-        MongoDB · GET /api/candidats/{candidat?.candidat_slug}/projets{competence ? `?competence=${competence}` : ''} (R2)
-      </Source>
+      )}
     </div>
   )
 }

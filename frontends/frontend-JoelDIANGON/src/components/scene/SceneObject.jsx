@@ -13,7 +13,7 @@ export default function SceneObject({ section, index, layout, dimmed, onOpen, on
       className={`orb-wrap orb-wrap--${layout}${section.hero ? ' is-hero' : ''}`}
       style={style}
       initial={{ opacity: 0, scale: 0.55 }}
-      animate={{ opacity: dimmed ? 0.4 : 1, scale: 1 }}
+      animate={{ opacity: dimmed ? 0.6 : 1, scale: 1 }}
       transition={{
         opacity: { duration: 0.5 },
         scale: { delay: 0.7 + index * 0.13, duration: 0.9, ease: [0.22, 1, 0.36, 1] },
@@ -29,7 +29,7 @@ export default function SceneObject({ section, index, layout, dimmed, onOpen, on
           <motion.button
             type="button"
             className="orb"
-            aria-label={`${section.label} — ${section.tagline}`}
+            aria-label={`${section.label} : ${section.tagline}`}
             whileHover={{ scale: 1.09 }}
             whileTap={{ scale: 0.95 }}
             transition={{ type: 'spring', stiffness: 260, damping: 18 }}

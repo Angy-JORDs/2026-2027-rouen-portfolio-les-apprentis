@@ -1,0 +1,142 @@
+/* ================================================================== LECTEUR DE CV */
+.cv-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: clamp(0.8rem, 3vh, 2rem) clamp(0.8rem, 3vw, 2rem);
+}
+
+.cv-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 10, 17, 0.78);
+}
+
+.cv-dialog {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(900px, 100%);
+  height: 100%;
+  max-height: 1100px;
+  overflow: hidden;
+  border-radius: var(--radius);
+  border: 1px solid var(--line-strong);
+  background: var(--bg-1);
+  box-shadow: 0 40px 90px rgba(0, 0, 0, 0.55);
+  outline: none;
+}
+
+.cv-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 0.8rem 0.7rem 1.2rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.cv-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 1.05rem;
+}
+
+.cv-title svg {
+  width: 20px;
+  height: 20px;
+  color: var(--green);
+}
+
+.cv-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cv-download {
+  min-height: 40px;
+  border-color: rgba(140, 197, 168, 0.55);
+  color: var(--green);
+  font-weight: 500;
+}
+
+.cv-icon-btn {
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+}
+
+.cv-close {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  color: var(--text-dim);
+}
+
+.cv-close:hover {
+  color: var(--text);
+  background: rgba(156, 195, 218, 0.1);
+}
+
+.cv-close svg {
+  width: 20px;
+  height: 20px;
+}
+
+.cv-body {
+  flex: 1;
+  min-height: 0;
+  background: #525659; /* gris du lecteur PDF des navigateurs : pas de flash au chargement */
+}
+
+.cv-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.cv-fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  height: 100%;
+  padding: 2rem;
+  background: var(--bg-1);
+  text-align: center;
+  color: var(--text-dim);
+}
+
+.cv-fallback-icon {
+  width: 48px;
+  height: 48px;
+  color: var(--green);
+}
+
+/* Carte « Mon CV » du panneau Contact : un bouton qui a l'allure des autres liens */
+button.contact-link {
+  width: 100%;
+  text-align: left;
+}
+
+@media (max-width: 560px) {
+  .cv-layer {
+    padding: 0;
+  }
+  .cv-dialog {
+    border-radius: 0;
+    border: 0;
+  }
+  .cv-body {
+    background: var(--bg-1);
+  }
+}

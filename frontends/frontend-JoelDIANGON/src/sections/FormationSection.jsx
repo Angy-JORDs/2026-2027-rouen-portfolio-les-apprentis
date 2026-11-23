@@ -1,6 +1,5 @@
 import { motion } from 'framer-motion'
 import Timeline from '../components/Timeline'
-import { Source } from '../components/ui/States'
 import { CERTIFICATIONS } from '../content/static'
 import { formatPeriod, sortByDateDesc } from '../lib/format'
 import { WithCandidat } from './shared'
@@ -22,8 +21,7 @@ export default function FormationSection() {
                   title: f.diplome,
                   org: f.ecole,
                 }))}
-              />
-              <Source>MongoDB · GET /api/candidats/{candidat.candidat_slug} (R1)</Source>
+              />
             </div>
             <aside>
               <p className="eyebrow">Certifications</p>

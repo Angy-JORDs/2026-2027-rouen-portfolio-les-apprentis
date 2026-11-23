@@ -157,6 +157,7 @@ Ouvre le site : la scène s'affiche, les sections se remplissent. C'est en ligne
 | Bandeau « API injoignable » sur le site | `VITE_API_URL` fausse ou absente au moment du build | Corriger la variable, redéployer le site |
 | Erreur `CORS` dans la console du navigateur (F12) | `CORS_ORIGINS` ≠ adresse exacte du site | Corriger (sans `/` final), redéployer l'API |
 | `404 Candidat non trouvé` | Base cloud vide ou pas à jour | Étape 2 |
+| Le seed s'arrête avec `OPENSSL_Uplink … no OPENSSL_Applink` (Neo4j vide) | L'antivirus Avast injecte `SSLKEYLOGFILE` (terminal hors VS Code) | Taper `Remove-Item Env:SSLKEYLOGFILE` puis relancer le seed |
 | Première requête lente | Démarrage à froid de la fonction | Normal, les suivantes sont rapides |
 | `DELETE` répond `403` | `READ_ONLY=true` | Voulu : l'API publique ne doit rien supprimer |
 
