@@ -178,8 +178,8 @@ export const FAQ = [
       'Projets Power BI',
       'Projets en Python',
       'Projets SQL',
-      'Projets d’intégration de données (ETL)',
-      'Projets de développement web',
+      'Expérience en intégration de données (ETL)',
+      'Compétences en développement web',
     ],
   },
   {
@@ -235,9 +235,13 @@ export function answer(question, ctx) {
   if (has(q, / (contact|contacter|joindre|e ?mail|mail|linkedin|github|coordonnees|telephone) /)) {
     const items = Object.entries(liens)
       .filter(([, url]) => url)
-      .map(([k, url]) => ({ label: k === 'linkedin' ? 'LinkedIn' : k === 'github' ? 'GitHub' : k, sub: url, href: url }))
+      .map(([k, url]) =>
+        k === 'email'
+          ? { label: 'E-mail', sub: url, href: `mailto:${url}` }
+          : { label: k === 'linkedin' ? 'LinkedIn' : k === 'github' ? 'GitHub' : k, sub: url, href: url },
+      )
     if (ctx.cvAvailable) items.push({ label: 'Voir le CV', sub: 'Coordonnées complètes dans le CV (PDF)', cv: true })
-    return { title: 'Comment le contacter', text: 'Le plus simple : un message sur LinkedIn.', items }
+    return { title: 'Comment le contacter', text: liens.email ? `Par e-mail (${liens.email}) ou par message sur LinkedIn.` : 'Le plus simple : un message sur LinkedIn.', items }
   }
   if (has(q, / (cv|curriculum|resume pdf) /)) {
     return ctx.cvAvailable
@@ -291,17 +295,28 @@ export function answer(question, ctx) {
   // ── Résultats chiffrés des projets
   if (has(q, / (resultats?|chiffres?|impacts?|gains?|metriques?|concrets?|realisations? chiffrees) /)) {
     const avecMetriques = ctx.projets.filter((p) => p.metriques && Object.keys(p.metriques).length)
-    return {
-      title: 'Résultats concrets',
-      text: `${avecMetriques.length} projet(s) avec des résultats mesurés :`,
-      items: avecMetriques.map((p) => ({
+    // Expériences dont la description contient des chiffres (ex. « +10 % de fidélisation ») : on garde ces phrases.
+    const phrasesChiffrees = (texte) =>
+      String(texte || '')
+        .split(/(?<=\.)\s+/)
+        .filter((s) => /\d+\s?%|\d+\+/.test(s))
+        .join(' ')
+    const expsChiffrees = sortByDateDesc(pros).filter((e) => phrasesChiffrees(e.description))
+    const items = [
+      ...expsChiffrees.map((e) => ({ label: `${e.poste} chez ${e.entreprise}`, sub: phrasesChiffrees(e.description), to: 'experiences' })),
+      ...avecMetriques.map((p) => ({
         label: p.titre,
         sub: Object.entries(p.metriques)
           .map(([k, v]) => `${humanizeKey(k)} ${v}`)
           .join(' · '),
         to: `projets/${p.projet_slug}`,
       })),
-      vide: !avecMetriques.length,
+    ]
+    return {
+      title: 'Résultats concrets',
+      text: 'Des résultats mesurés, en entreprise comme en projet :',
+      items,
+      vide: !items.length,
     }
   }
 
@@ -391,7 +406,9 @@ export function answer(question, ctx) {
       title: `${sujet.charAt(0).toUpperCase()}${sujet.slice(1)}`,
       text: projets.length
         ? `${projets.length} projet(s) mobilisent ${sujet}${exps.length ? `, et ${dureeTexte(mois)} d’expérience professionnelle s’y rapportent` : ''}.`
-        : declarees.length
+        : exps.length
+          ? `Mis en pratique en entreprise : ${dureeTexte(mois)} d’expérience professionnelle avec ${sujet}.`
+          : declarees.length
           ? `Compétence(s) déclarée(s) : ${niveaux}${exps.length ? `, mises en pratique dans ${exps.length} expérience(s) professionnelle(s)` : ''}.`
           : `Aucun projet ne mobilise ${sujet}${exps.length ? `, mais ${exps.length} expérience(s) professionnelle(s) oui` : ''}.`,
       items: [

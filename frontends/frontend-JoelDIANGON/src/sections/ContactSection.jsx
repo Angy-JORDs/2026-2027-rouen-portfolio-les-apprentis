@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { useCvViewer } from '../components/cv/CvViewer'
-import { ArrowRightIcon, CvIcon, ExternalIcon, GithubIcon, LinkedinIcon } from '../components/icons'
+import { ArrowRightIcon, ContactIcon, CvIcon, ExternalIcon, GithubIcon, LinkedinIcon } from '../components/icons'
 import { useCvAvailable } from '../components/ui/TopActions'
 import { WithCandidat } from './shared'
 
@@ -19,7 +19,13 @@ export default function ContactSection() {
       {({ candidat }) => {
         const liens = Object.entries(candidat.liens || {})
           .filter(([, url]) => url)
-          .map(([cle, url]) => ({ cle, url, ...(RESEAUX[cle] || { label: cle, detail: url, Icon: ExternalIcon }) }))
+          .map(([cle, url]) =>
+            cle === 'email'
+              ? { cle, url: `mailto:${url}`, label: 'E-mail', detail: url, Icon: ContactIcon, interne: true }
+              : { cle, url, ...(RESEAUX[cle] || { label: cle, detail: url, Icon: ExternalIcon }) },
+          )
+          // L'e-mail en premier : c'est le moyen de contact le plus direct pour un recruteur
+          .sort((a, b) => (b.cle === 'email') - (a.cle === 'email'))
         if (cvAvailable) {
           liens.unshift({ cle: 'cv', label: 'Mon CV', detail: 'Voir le CV complet (PDF)', Icon: CvIcon })
         }
@@ -47,13 +53,17 @@ export default function ContactSection() {
                       <ArrowRightIcon className="contact-arrow" />
                     </button>
                   ) : (
-                    <a className="contact-link" href={lien.url} target="_blank" rel="noreferrer">
+                    <a
+                      className="contact-link"
+                      href={lien.url}
+                      {...(lien.interne ? {} : { target: '_blank', rel: 'noreferrer' })}
+                    >
                       <lien.Icon className="contact-icon" />
                       <span className="contact-body">
                         <span className="contact-label">{lien.label}</span>
                         <span className="contact-detail">{lien.detail}</span>
                       </span>
-                      <ExternalIcon className="contact-arrow" />
+                      {lien.interne ? <ArrowRightIcon className="contact-arrow" /> : <ExternalIcon className="contact-arrow" />}
                     </a>
                   )}
                 </motion.li>

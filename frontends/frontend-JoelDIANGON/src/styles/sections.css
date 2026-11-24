@@ -699,9 +699,9 @@
   background: linear-gradient(90deg, var(--blue-soft), var(--green));
   transform-origin: left center;
 }
-
-
-
+
+
+
 
 /* ------------------------------------------------------------------ langues */
 .langues {
@@ -729,9 +729,9 @@
   font-size: 0.82rem;
   color: var(--green);
 }
-
-
-
+
+
+
 
 /* ------------------------------------------------------------------ contact */
 .contact-lead {
@@ -787,6 +787,7 @@
 .contact-body {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .contact-label {
@@ -797,6 +798,8 @@
 .contact-detail {
   font-size: 0.78rem;
   color: var(--text-faint);
+  /* une adresse e-mail longue passe à la ligne au lieu de déborder de la carte */
+  overflow-wrap: anywhere;
 }
 
 .contact-arrow {
