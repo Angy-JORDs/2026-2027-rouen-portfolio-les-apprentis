@@ -7,7 +7,7 @@
  * `to` est une route du site (ex. "projets/edi-de-rijke") que l'interface peut ouvrir.
  */
 
-import { formatMonth, formatPeriod, sortByDateDesc } from './format'
+import { formatMonth, formatPeriod, humanizeKey, sortByDateDesc } from './format'
 
 /** minuscules, sans accents ni ponctuation */
 export function normalize(text) {
@@ -81,14 +81,6 @@ const DOMAINES_LIBELLES = {
   'gestion-de-projet': 'Gestion de projet',
 }
 
-const METRIQUE_SIGLES = new Set(['kpi', 'kpis', 'etl', 'mae', 'rmse', 'roi'])
-const libelleMetrique = (k) => {
-  const t = String(k)
-    .split('_')
-    .map((w) => (METRIQUE_SIGLES.has(w) ? w.toUpperCase() : w))
-    .join(' ')
-  return t.charAt(0).toUpperCase() + t.slice(1)
-}
 
 /** Compétences citées dans la question (nom ou slug), plus les familles. */
 function detectSkills(q, ctx) {
@@ -305,7 +297,7 @@ export function answer(question, ctx) {
       items: avecMetriques.map((p) => ({
         label: p.titre,
         sub: Object.entries(p.metriques)
-          .map(([k, v]) => `${libelleMetrique(k)} ${v}`)
+          .map(([k, v]) => `${humanizeKey(k)} ${v}`)
           .join(' · '),
         to: `projets/${p.projet_slug}`,
       })),

@@ -24,13 +24,37 @@ export function sortByDateDesc(items, field = 'debut') {
 
 const SIGLES = new Set(['mae', 'rmse', 'mse', 'r2', 'kpi', 'kpis', 'ci', 'api', 'roi', 'auc', 'etl'])
 
-/** "rmse_vs_prix_moyen" -> "RMSE vs prix moyen" ; "tests_verts" -> "Tests verts" */
+// Les clés des données sont écrites sans accents (identifiants techniques) : on les rétablit à l'affichage.
+const ACCENTS = {
+  fidelisation: 'fidélisation',
+  couts: 'coûts',
+  bieres: 'bières',
+  analysees: 'analysées',
+  testees: 'testées',
+  detectees: 'détectées',
+  analyse: 'd’analyse',
+  donnees: 'données',
+  precision: 'précision',
+  reduction: 'réduction',
+  economie: 'économie',
+  economies: 'économies',
+  delai: 'délai',
+  delais: 'délais',
+  qualite: 'qualité',
+}
+
+/** "rmse_vs_prix_moyen" -> "RMSE vs prix moyen" ; "couts_marketing" -> "Coûts marketing" */
 export function humanizeKey(key) {
   const words = String(key)
     .replace(/_/g, ' ')
     .trim()
     .split(/\s+/)
-    .map((w) => (SIGLES.has(w.toLowerCase()) ? w.toUpperCase() : w))
+    .map((w, i) => {
+      if (SIGLES.has(w.toLowerCase())) return w.toUpperCase()
+      // « analyse » seul en tête reste « Analyse » ; après un nom (« temps analyse ») il devient « d’analyse »
+      if (w === 'analyse' && i === 0) return w
+      return ACCENTS[w.toLowerCase()] ?? w
+    })
   const text = words.join(' ')
   return text.charAt(0).toUpperCase() + text.slice(1)
 }
