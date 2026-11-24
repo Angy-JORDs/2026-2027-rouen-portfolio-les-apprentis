@@ -6,6 +6,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 
+from portfolio_api.core.config import get_settings
 from portfolio_api.db.mongo import get_mongo_db
 from portfolio_api.db.neo4j import get_neo4j_driver
 from portfolio_api.models import Page, ProjetOut
@@ -42,7 +43,18 @@ async def get_projet(slug: str, service: ProjetService = Depends(_get_service)):
     return projet
 
 
-@router.delete("/{slug}", status_code=status.HTTP_204_NO_CONTENT)
+def _require_write_access() -> None:
+    """API déployée en lecture seule (READ_ONLY=true) : toute écriture est refusée."""
+    if get_settings().read_only:
+        raise HTTPException(status_code=403, detail="API en lecture seule : la suppression est désactivée")
+
+
+@router.delete(
+    "/{slug}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(_require_write_access)],
+    responses={403: {"description": "API déployée en lecture seule (READ_ONLY=true)"}},
+)
 async def delete_projet(slug: str, service: ProjetService = Depends(_get_service)) -> Response:
     if not await service.delete_projet(slug):
         raise HTTPException(status_code=404, detail="Projet non trouvé")

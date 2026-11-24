@@ -2,8 +2,8 @@
   "candidat_slug": "joel-diangon",
   "prenom": "Joël",
   "nom": "Diangon",
-  "titre": "Data Analyst · BI · IA — Apprenti ingénieur Data & IA chez De Rijke (ESIGELEC Big Data)",
-  "bio": "Profil data analytics, business intelligence et intelligence artificielle. Élève-ingénieur à l'ESIGELEC en Big Data pour la Transformation Numérique, en alternance Data & IA chez De Rijke : dashboards Power BI, intégration de données et projets d'IA appliqués au transport et à la logistique. Expérience de Data Analyst junior chez Afriland First Bank (reporting financier automatisé, scoring clients). Objectif : transformer les données en décisions pour la supply chain et la finance.",
+  "titre": "Ingénieur Data · BI · IA, en alternance chez De Rijke (ESIGELEC Big Data)",
+  "bio": "Profil data analytics, business intelligence et intelligence artificielle. Élève-ingénieur à l'ESIGELEC en Big Data pour la Transformation Numérique, en alternance Data & IA chez De Rijke : dashboards Power BI, intégration de données et projets d'IA appliqués au transport et à la logistique. Expérience de Data Analyst junior chez Afriland First Bank (reporting financier automatisé, scoring clients). Objectif : transformer les données en décisions.",
   "liens": {
     "github": "https://github.com/JoelDIANGON",
     "linkedin": "https://www.linkedin.com/in/jo%C3%ABl-diangon/"
@@ -94,13 +94,13 @@
   "formations": [
     {
       "ecole": "ESIGELEC",
-      "diplome": "Diplôme d'ingénieur — Big Data pour la Transformation Numérique",
+      "diplome": "Diplôme d'ingénieur en Big Data pour la Transformation Numérique",
       "debut": "2024-09",
       "fin": "2027-09"
     },
     {
       "ecole": "PrépaVogt",
-      "diplome": "Classe préparatoire aux grandes écoles — MPSI",
+      "diplome": "Classe préparatoire aux grandes écoles (MPSI)",
       "debut": "2022-09",
       "fin": "2024-05"
     }
@@ -337,7 +337,7 @@
   ],
   "certifications": [
     {
-      "nom": "Data Science et Machine Learning — MasterClass Python",
+      "nom": "Data Science et Machine Learning (MasterClass Python)",
       "statut": "obtenue"
     },
     {

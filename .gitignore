@@ -10,3 +10,5 @@ build/
 .next/
 .astro/
 .DS_Store
+# Liaison locale aux projets Vercel (créée par `vercel link`)
+.vercel/

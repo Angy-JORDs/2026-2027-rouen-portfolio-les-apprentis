@@ -1,0 +1,271 @@
+/* ================================================================== VERSION CLASSIQUE (page qui défile) */
+.cp {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  overflow-y: auto;
+  background:
+    radial-gradient(ellipse 90% 50% at 50% 0%, rgba(63, 124, 172, 0.16), transparent 60%),
+    var(--bg-1);
+  scroll-behavior: smooth;
+}
+
+.cp-bar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.8rem clamp(1rem, 4vw, 3rem);
+  border-bottom: 1px solid var(--line);
+  background: var(--glass-strong);
+  backdrop-filter: blur(16px);
+}
+
+.cp-back {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.cp-back svg {
+  width: 15px;
+  height: 15px;
+}
+
+.cp-back:hover {
+  color: var(--text);
+}
+
+.cp-anchors {
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  gap: clamp(0.6rem, 1.6vw, 1.4rem);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.cp-anchors button {
+  flex: none;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.cp-anchors button:hover {
+  color: var(--green);
+}
+
+.cp-inner {
+  width: min(960px, 100%);
+  margin: 0 auto;
+  padding: clamp(2rem, 6vh, 4rem) clamp(1.2rem, 4vw, 2rem) 4rem;
+}
+
+.cp-hero {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(1.5rem, 5vw, 3.5rem);
+  padding-bottom: 2.5rem;
+  border-bottom: 1px solid var(--line);
+}
+
+/* Portrait dans un cadre circulaire, à gauche du nom, avec un fin liseré vert et un halo discret */
+.cp-portrait {
+  order: -1;
+  margin: 0;
+  width: clamp(170px, 20vw, 230px);
+  aspect-ratio: 1;
+  padding: 5px;
+  border-radius: 50%;
+  border: 1px solid rgba(140, 197, 168, 0.55);
+  background: radial-gradient(circle at 50% 30%, rgba(140, 197, 168, 0.12), transparent 70%);
+  box-shadow:
+    0 0 0 6px rgba(140, 197, 168, 0.06),
+    0 24px 60px rgba(0, 0, 0, 0.45);
+}
+
+.cp-portrait img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 50%;
+  border-radius: 50%;
+}
+
+.cp-name {
+  font-size: clamp(2.2rem, 5vw, 3.4rem);
+  font-weight: 200;
+  line-height: 1.1;
+}
+
+.cp-role {
+  margin-top: 0.6rem;
+  color: var(--green);
+}
+
+.cp-bio {
+  max-width: 44rem;
+  margin-top: 1rem;
+  color: var(--text-dim);
+}
+
+.cp-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 1.6rem;
+}
+
+.cp-section {
+  padding: clamp(2.2rem, 6vh, 3.4rem) 0 0.5rem;
+  scroll-margin-top: 4.5rem;
+}
+
+.cp-h2 {
+  margin-bottom: 1.6rem;
+  font-size: clamp(1.4rem, 2.6vw, 1.9rem);
+  font-weight: 300;
+}
+
+.cp-h3 {
+  margin: 1.8rem 0 0.8rem;
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--blue-mist);
+}
+
+.cp-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--text);
+}
+
+.cp-list li {
+  margin-bottom: 0.35rem;
+}
+
+.cp-muted {
+  color: var(--text-faint);
+}
+
+.cp-projects {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 400px), 1fr));
+  gap: 1rem;
+}
+
+.cp-project {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 1.3rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: rgba(156, 195, 218, 0.04);
+}
+
+.cp-project-title {
+  font-size: 1.1rem;
+  font-weight: 400;
+}
+
+.cp-project-desc {
+  margin-top: 0.3rem;
+  font-size: 0.9rem;
+  color: var(--text-dim);
+}
+
+.cp-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+
+.cp-metrics strong {
+  font-family: var(--font-display);
+  font-weight: 400;
+  color: var(--green);
+}
+
+.cp-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.8rem;
+  font-size: 0.82rem;
+  color: var(--green);
+  text-decoration: none;
+}
+
+.cp-link svg {
+  width: 14px;
+  height: 14px;
+}
+
+.cp-skills {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+  gap: 0 2rem;
+}
+
+.cp-skill-group ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cp-langues {
+  display: grid;
+  gap: 0.8rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cp-langues li {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.cp-footer {
+  margin-top: 3.5rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--line);
+  text-align: center;
+}
+
+@media (max-width: 760px) {
+  .cp-back span,
+  .cp-anchors {
+    display: none;
+  }
+
+  .cp-bar {
+    justify-content: space-between;
+  }
+
+  /* Sur téléphone, le portrait passe au-dessus du nom */
+  .cp-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .cp-portrait {
+    order: -1;
+    width: 132px;
+  }
+}

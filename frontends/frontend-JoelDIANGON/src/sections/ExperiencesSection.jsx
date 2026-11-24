@@ -1,5 +1,4 @@
 import Timeline from '../components/Timeline'
-import { Source } from '../components/ui/States'
 import { isAssociatif } from '../content/static'
 import { formatPeriod, sortByDateDesc } from '../lib/format'
 import { WithCandidat, skillTags } from './shared'
@@ -29,8 +28,7 @@ export default function ExperiencesSection({ associatives = false }) {
                 description: e.description,
                 tags: skillTags(e.competences, skillName),
               }))}
-            />
-            <Source>MongoDB · GET /api/candidats/{candidat.candidat_slug} (R1)</Source>
+            />
           </div>
         )
       }}

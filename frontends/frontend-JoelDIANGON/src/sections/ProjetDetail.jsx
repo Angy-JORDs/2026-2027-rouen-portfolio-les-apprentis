@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import { api } from '../api/client'
 import { ArrowLeftIcon, ArrowRightIcon, ExternalIcon, GithubIcon } from '../components/icons'
 import Tags from '../components/ui/Tags'
-import { ErrorState, Loader, Source } from '../components/ui/States'
+import { ErrorState, Loader } from '../components/ui/States'
 import { useCandidat } from '../context/CandidatContext'
 import { useAsync } from '../hooks/useAsync'
 import { formatPeriod, humanizeKey } from '../lib/format'
@@ -80,8 +80,7 @@ export default function ProjetDetail({ slug, navigate }) {
             <a className="btn btn--ghost" href={p.liens.github} target="_blank" rel="noreferrer">
               <GithubIcon /> Voir le code sur GitHub <ExternalIcon />
             </a>
-          )}
-          <Source>MongoDB · GET /api/projets/{p.projet_slug} (R8)</Source>
+          )}
         </div>
 
         <aside>
@@ -111,8 +110,7 @@ export default function ProjetDetail({ slug, navigate }) {
                 </button>
               </motion.li>
             ))}
-          </ul>
-          <Source>Neo4j · GET /api/graph/projets/{p.projet_slug}/similaires (R4)</Source>
+          </ul>
         </aside>
       </div>
     </motion.article>

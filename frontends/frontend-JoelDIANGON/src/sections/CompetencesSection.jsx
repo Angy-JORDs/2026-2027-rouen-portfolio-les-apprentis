@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { api } from '../api/client'
-import { ErrorState, Loader, Source } from '../components/ui/States'
+import { ErrorState, Loader } from '../components/ui/States'
 import { useCandidat } from '../context/CandidatContext'
 import { useAsync } from '../hooks/useAsync'
 import SkillGraph from './SkillGraph'
@@ -33,7 +33,6 @@ export default function CompetencesSection({ navigate }) {
             onSelectProjet={(p) => navigate(`projets/${p}`)}
           />
         )}
-        <Source>Neo4j · GET /api/graph/competences/{slug} (R5)</Source>
       </div>
 
       <aside className="stats-card">
@@ -41,7 +40,6 @@ export default function CompetencesSection({ navigate }) {
         {stats.error && <ErrorState error={stats.error} onRetry={stats.reload} />}
         {!stats.error && !stats.data && <Loader />}
         {stats.data && <StatsList stats={stats.data} navigate={navigate} />}
-        <Source>MongoDB · agrégation · GET /api/candidats/{slug}/stats (R3)</Source>
       </aside>
     </div>
   )
@@ -77,13 +75,6 @@ function StatsList({ stats, navigate }) {
                   transition={{ duration: 0.9, delay: 0.3 + i * 0.05, ease: [0.22, 1, 0.36, 1] }}
                 />
               </span>
-              {typeof c.niveau === 'number' && (
-                <span className="stat-level" aria-label={`Niveau ${c.niveau} sur 5`}>
-                  {[1, 2, 3, 4, 5].map((n) => (
-                    <i key={n} className={n <= c.niveau ? 'on' : ''} />
-                  ))}
-                </span>
-              )}
             </button>
           </li>
         ))}

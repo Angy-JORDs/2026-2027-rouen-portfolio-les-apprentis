@@ -496,10 +496,6 @@
   background: radial-gradient(ellipse at 50% 45%, rgba(63, 124, 172, 0.1), transparent 70%);
 }
 
-.graph-card .source {
-  margin: 0.4rem 0 0.6rem 0.4rem;
-}
-
 .graph-legend {
   display: flex;
   flex-wrap: wrap;
@@ -703,23 +699,9 @@
   background: linear-gradient(90deg, var(--blue-soft), var(--green));
   transform-origin: left center;
 }
-
-.stat-level {
-  grid-area: level;
-  display: inline-flex;
-  gap: 3px;
-}
-
-.stat-level i {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: rgba(156, 195, 218, 0.18);
-}
-
-.stat-level i.on {
-  background: var(--green);
-}
+
+
+
 
 /* ------------------------------------------------------------------ langues */
 .langues {
@@ -747,24 +729,9 @@
   font-size: 0.82rem;
   color: var(--green);
 }
-
-.langue-meter {
-  display: flex;
-  gap: 6px;
-  margin-top: 1.1rem;
-}
-
-.langue-seg {
-  flex: 1;
-  height: 5px;
-  border-radius: 5px;
-  background: rgba(156, 195, 218, 0.12);
-  transform-origin: bottom;
-}
-
-.langue-seg.on {
-  background: linear-gradient(90deg, var(--blue-soft), var(--green));
-}
+
+
+
 
 /* ------------------------------------------------------------------ contact */
 .contact-lead {

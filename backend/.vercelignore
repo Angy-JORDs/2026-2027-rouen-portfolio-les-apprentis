@@ -1,0 +1,9 @@
+# Fichiers à ne PAS envoyer à Vercel lors d'un déploiement de l'API (vercel deploy --cwd backend)
+.venv
+.pytest_cache
+__pycache__
+tests
+.vercel
+# Secrets : les identifiants se règlent dans les variables d'environnement du projet Vercel
+.env
+.env.*

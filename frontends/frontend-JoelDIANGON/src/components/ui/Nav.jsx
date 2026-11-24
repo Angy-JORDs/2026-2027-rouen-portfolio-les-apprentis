@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { PARCOURS, SECTIONS } from '../../content/sections'
+import { SECTIONS } from '../../content/sections'
 import { useMediaQuery } from '../../hooks/useMediaQuery'
 import { CloseIcon, MenuIcon } from '../icons'
+import TopActions from './TopActions'
 
-const ITEMS = [{ id: '', label: 'Scène' }, { id: PARCOURS.id, label: 'Parcours' }, ...SECTIONS]
+// « Parcours » ouvre la version classique (page qui défile).
+const ITEMS = [{ id: '', label: 'Scène' }, { id: 'portfolio', label: 'Parcours' }, ...SECTIONS]
 
 /**
  * Navigation alternative, discrète : accès direct aux sections sans passer par les objets.
@@ -47,22 +49,26 @@ export default function Nav({ current, onNavigate }) {
             )
           })}
         </ul>
+        <TopActions />
       </motion.nav>
     )
   }
 
   return (
     <>
-      <button
-        type="button"
-        className="nav-toggle"
-        aria-expanded={open}
-        aria-controls="nav-sheet"
-        onClick={() => setOpen((o) => !o)}
-      >
-        {open ? <CloseIcon /> : <MenuIcon />}
-        <span>{open ? 'Fermer' : 'Menu'}</span>
-      </button>
+      <div className="nav-mobile-bar">
+        <TopActions />
+        <button
+          type="button"
+          className="nav-toggle"
+          aria-expanded={open}
+          aria-controls="nav-sheet"
+          onClick={() => setOpen((o) => !o)}
+        >
+          {open ? <CloseIcon /> : <MenuIcon />}
+          <span>{open ? 'Fermer' : 'Menu'}</span>
+        </button>
+      </div>
       <AnimatePresence>
         {open && (
           <motion.nav

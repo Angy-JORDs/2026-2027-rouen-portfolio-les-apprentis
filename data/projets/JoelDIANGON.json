@@ -5,7 +5,7 @@
       "joel-diangon"
     ],
     "titre": "Modèle de scoring clients bancaire",
-    "contexte": "Stage Junior Data Analyst — Afriland First Bank (2024)",
+    "contexte": "Stage Junior Data Analyst chez Afriland First Bank (2024)",
     "description": "Conception d'un modèle de scoring pour segmenter les clients de la banque et cibler les actions de fidélisation et les campagnes marketing.",
     "date_debut": "2024-06",
     "date_fin": "2024-08",
@@ -28,7 +28,7 @@
       "joel-diangon"
     ],
     "titre": "Automatisation du reporting financier",
-    "contexte": "Stage Junior Data Analyst — Afriland First Bank (2024)",
+    "contexte": "Stage Junior Data Analyst chez Afriland First Bank (2024)",
     "description": "Automatisation du reporting financier et tableau de bord interactif de suivi des KPIs en temps réel, pour identifier les comportements d'achat et appuyer les décisions stratégiques.",
     "date_debut": "2024-06",
     "date_fin": "2024-08",
@@ -49,7 +49,7 @@
       "joel-diangon"
     ],
     "titre": "Suivi des transactions en temps réel",
-    "contexte": "Stage Junior Data Analyst — Afriland First Bank (2024)",
+    "contexte": "Stage Junior Data Analyst chez Afriland First Bank (2024)",
     "description": "Tableau de bord de suivi des transactions bancaires en temps réel permettant de repérer les transactions suspectes.",
     "date_debut": "2024-06",
     "date_fin": "2024-08",
@@ -70,7 +70,7 @@
       "joel-diangon"
     ],
     "titre": "Dashboards métiers Power BI",
-    "contexte": "Alternance Data & IA — De Rijke (depuis 2025)",
+    "contexte": "Alternance Data & IA chez De Rijke (depuis 2025)",
     "description": "Création et maintenance de dashboards Power BI pour la logistique, le transport, la qualité, la finance et le marketing, alimentés par des flux ETL depuis des sources internes et externes.",
     "date_debut": "2025-10",
     "date_fin": null,
@@ -92,7 +92,7 @@
       "joel-diangon"
     ],
     "titre": "Mise en œuvre d'un EDI",
-    "contexte": "Alternance Data & IA — De Rijke (depuis 2025)",
+    "contexte": "Alternance Data & IA chez De Rijke (depuis 2025)",
     "description": "Conception et mise en œuvre d'échanges de données informatisés avec les partenaires et entre systèmes internes (XML, JSON, EDIFACT), avec documentation des flux dans le data catalog.",
     "date_debut": "2025-10",
     "date_fin": null,
@@ -111,7 +111,7 @@
       "joel-diangon"
     ],
     "titre": "Gestion de bibliothèque universitaire",
-    "contexte": "Projet — formation complémentaire",
+    "contexte": "Projet de formation complémentaire",
     "description": "Système automatisé de gestion des emprunts sur une base MySQL, avec un tableau de bord Power BI pour suivre les lectures en temps réel.",
     "date_debut": "2025-03",
     "date_fin": null,
@@ -131,7 +131,7 @@
       "joel-diangon"
     ],
     "titre": "Datavisualisation des bières artisanales aux États-Unis",
-    "contexte": "Projet — formation complémentaire",
+    "contexte": "Projet de formation complémentaire",
     "description": "Exploration du marché des bières artisanales américaines : répartition des styles, comparaison de la teneur en alcool (ABV) et de l'amertume (IBU), cartographie des brasseries par État. Tableau de bord Power BI interactif (modélisation DAX) et analyses complémentaires en Python.",
     "date_debut": "2025-01",
     "date_fin": "2025-02",
@@ -159,7 +159,7 @@
       "joel-diangon"
     ],
     "titre": "Biais des notes de films sur Fandango",
-    "contexte": "Projet capstone — Introduction à la Data Science",
+    "contexte": "Projet capstone (Introduction à la Data Science)",
     "description": "Analyse exploratoire des notes de films de Fandango comparées à celles d'autres sites (Rotten Tomatoes, Metacritic, IMDb) : corrélations, distributions KDE des notes affichées et réelles, quantification de l'écart entre étoiles affichées et note réelle. Met en évidence une surévaluation des notes affichées par Fandango.",
     "date_debut": "2024-12",
     "date_fin": "2025-02",

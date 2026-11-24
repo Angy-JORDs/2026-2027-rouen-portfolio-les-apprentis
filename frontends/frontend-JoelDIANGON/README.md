@@ -33,6 +33,12 @@ Le port **5173** est déjà autorisé dans `CORS_ORIGINS` de l'API (`.env.exampl
 Pour viser une autre API ou un autre candidat, copier `.env.example` en `.env` dans ce dossier et modifier
 `VITE_API_URL` / `VITE_CANDIDAT_SLUG`.
 
+**Crédits** : image de fond « salle de serveurs » de Vlad_Aivazovsky sur Pixabay
+(https://pixabay.com/illustrations/computer-server-room-pc-technology-8281618/), Pixabay Content License (usage libre).
+
+**Mise en ligne** : le site et l'API se déploient sur Vercel depuis ton PC, avec tes propres bases cloud —
+voir **[DEPLOIEMENT.md](./DEPLOIEMENT.md)**.
+
 ## Écrans et routes consommées
 
 | Écran (URL) | Ce qui est affiché | Route(s) de `API_ROUTES.md` | Base |
