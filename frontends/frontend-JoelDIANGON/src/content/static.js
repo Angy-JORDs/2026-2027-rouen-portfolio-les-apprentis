@@ -21,7 +21,7 @@ export const CERTIFICATIONS = [
 ]
 
 /** Organisations dont l'expérience est classée « associative » (le reste est professionnel). */
-const ORGANISATIONS_ASSOCIATIVES = ['afev', 'club informatique']
+const ORGANISATIONS_ASSOCIATIVES = ['afev', 'club informatique', 'vikings']
 
 export function isAssociatif(experience) {
   const nom = String(experience?.entreprise || '').toLowerCase()

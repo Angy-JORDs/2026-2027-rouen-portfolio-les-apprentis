@@ -162,6 +162,7 @@ function contenuHtml({ candidat: c, projets }, nomCompetence) {
       <section>
         <h2>Contact</h2>
         <ul>
+          ${liens.email ? `<li>E-mail : <a href="mailto:${esc(liens.email)}">${esc(liens.email)}</a></li>` : ''}
           ${liens.linkedin ? `<li>LinkedIn : <a href="${esc(liens.linkedin)}">${esc(decodeURI(liens.linkedin))}</a></li>` : ''}
           ${liens.github ? `<li>GitHub : <a href="${esc(liens.github)}">${esc(liens.github)}</a></li>` : ''}
         </ul>
@@ -181,7 +182,8 @@ function teteHtml({ candidat: c }, siteUrl) {
     description: resume,
     url: siteUrl,
     image: `${siteUrl}/portrait-joel-diangon.webp`,
-    sameAs: Object.values(c.liens || {}).filter(Boolean),
+    ...(c.liens?.email ? { email: `mailto:${c.liens.email}` } : {}),
+    sameAs: [c.liens?.linkedin, c.liens?.github].filter(Boolean),
     ...(actuelle ? { worksFor: { '@type': 'Organization', name: actuelle.entreprise } } : {}),
     alumniOf: (c.formations || []).map((f) => ({ '@type': 'EducationalOrganization', name: f.ecole })),
     knowsAbout: [...(c.competences || [])]

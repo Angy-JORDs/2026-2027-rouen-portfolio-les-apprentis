@@ -3,10 +3,11 @@
   "prenom": "Joël",
   "nom": "Diangon",
   "titre": "Ingénieur Data · BI · IA, en alternance chez De Rijke (ESIGELEC Big Data)",
-  "bio": "Profil data analytics, business intelligence et intelligence artificielle. Élève-ingénieur à l'ESIGELEC en Big Data pour la Transformation Numérique, en alternance Data & IA chez De Rijke : dashboards Power BI, intégration de données et projets d'IA appliqués au transport et à la logistique. Expérience de Data Analyst junior chez Afriland First Bank (reporting financier automatisé, scoring clients). Objectif : transformer les données en décisions.",
+  "bio": "Profil data analytics, business intelligence et intelligence artificielle. Élève-ingénieur à l'ESIGELEC en Big Data pour la Transformation Numérique. Ouvert à de nouveaux défis, j'aide les organisations à explorer, exploiter et valoriser leurs données pour en faire un levier de décision et de performance.",
   "liens": {
     "github": "https://github.com/JoelDIANGON",
-    "linkedin": "https://www.linkedin.com/in/jo%C3%ABl-diangon/"
+    "linkedin": "https://www.linkedin.com/in/jo%C3%ABl-diangon/",
+    "email": "diangonjoelarchange@gmail.com"
   },
   "experiences": [
     {
@@ -14,7 +15,7 @@
       "poste": "Apprenti ingénieur Data & IA",
       "debut": "2025-10",
       "fin": null,
-      "description": "Dashboards Power BI pour les équipes métiers (logistique, transport, qualité, finance, marketing). Intégration de données (ETL, API, fichiers plats), documentation des flux (data catalog, dictionnaire de données), mise en œuvre d'un EDI (XML, JSON, EDIFACT) et projets d'IA appliquée au transport et à la logistique.",
+      "description": "Conception et maintenance de dashboards Power BI pour 5 métiers (logistique, transport, qualité, finance, marketing), alimentés par des flux ETL (SSIS, Microsoft Fabric). Mise en œuvre d'un EDI avec les partenaires et entre systèmes internes (XML, JSON, EDIFACT), flux documentés dans le data catalog. Projets d'IA appliquée au transport et à la logistique.",
       "competences": [
         "power-bi",
         "dax",
@@ -29,31 +30,19 @@
       ]
     },
     {
-      "entreprise": "Pierre et Vacances",
-      "poste": "Réceptionniste (job saisonnier)",
-      "debut": "2025-07",
-      "fin": "2025-08",
-      "description": "Accueil d'une clientèle internationale dans une résidence 5 étoiles à Arc 1950 : check-in/check-out, conseil, gestion des réclamations, au sein d'une équipe de 50+ personnes.",
-      "competences": []
-    },
-    {
-      "entreprise": "Complétude",
-      "poste": "Assistant pédagogique",
-      "debut": "2024-10",
-      "fin": "2025-05",
-      "description": "Accompagnement de lycéens (Seconde à Terminale, filières scientifiques) en mathématiques, physique, informatique et chimie, et préparation au Bac.",
-      "competences": []
-    },
-    {
       "entreprise": "Afriland First Bank",
       "poste": "Junior Data Analyst (stage)",
       "debut": "2024-06",
       "fin": "2024-08",
-      "description": "Tableaux de bord KPI interactifs, modèle de scoring clients (+10 % de fidélisation, -15 % de coûts marketing), automatisation du reporting financier sous Power BI (-30 % de temps d'analyse) et suivi des transactions en temps réel (200+ transactions suspectes détectées par mois).",
+      "description": "Modèle de scoring clients pour cibler la fidélisation et le marketing : +10 % de fidélisation, -15 % de coûts marketing. Automatisation du reporting financier sous Power BI : -30 % de temps d'analyse. Tableau de bord de suivi des transactions en temps réel : 200+ transactions suspectes détectées par mois.",
       "competences": [
         "power-bi",
         "machine-learning",
-        "statistiques"
+        "statistiques",
+        "dax",
+        "sql",
+        "python",
+        "scikit-learn"
       ]
     },
     {
@@ -79,7 +68,7 @@
       "poste": "Membre",
       "debut": "2024-11",
       "fin": null,
-      "description": "Développement d'une application web de gestion des dominantes des étudiants.",
+      "description": "Développement d'une application web de gestion des dominantes des étudiants de l'ESIGELEC (saisie des vœux, suivi des choix, administration), en PHP et MySQL.",
       "competences": [
         "php",
         "html",
@@ -89,6 +78,14 @@
         "sql",
         "git"
       ]
+    },
+    {
+      "entreprise": "Club des Vikings",
+      "poste": "Nageur (perfectionnement adulte)",
+      "debut": "2026-10",
+      "fin": null,
+      "description": "Formation de perfectionnement en natation adulte : développement de l'endurance, de la régularité et de la capacité à se surpasser à chaque séance.",
+      "competences": []
     }
   ],
   "formations": [

@@ -1,7 +1,7 @@
 import { useMemo, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { api } from '../api/client'
-import { ArrowLeftIcon, ExternalIcon, GithubIcon, LinkedinIcon } from '../components/icons'
+import { ArrowLeftIcon, ContactIcon, ExternalIcon, GithubIcon, LinkedinIcon } from '../components/icons'
 import Timeline from '../components/Timeline'
 import Tags from '../components/ui/Tags'
 import TopActions, { CvButton } from '../components/ui/TopActions'
@@ -270,6 +270,11 @@ export default function ClassicPortfolio({ navigate }) {
           </p>
           <div className="cp-hero-actions">
             <CvButton className="action-btn--large" />
+            {liens.email && (
+              <a className="btn" href={`mailto:${liens.email}`}>
+                <ContactIcon /> {liens.email}
+              </a>
+            )}
             {liens.linkedin && (
               <a className="btn" href={liens.linkedin} target="_blank" rel="noreferrer">
                 <LinkedinIcon /> LinkedIn
