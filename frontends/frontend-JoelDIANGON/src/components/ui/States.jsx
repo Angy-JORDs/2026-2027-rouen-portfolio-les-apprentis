@@ -17,9 +17,9 @@ export function ErrorState({ error, onRetry, children }) {
   const unreachable = error?.status === 0
   return (
     <div className="state state--error" role="alert">
-      <p className="state-title">{unreachable ? 'L’API ne répond pas' : 'Impossible de charger ces données'}</p>
+      <p className="state-title">Impossible de charger ces données</p>
       <p className="state-text">{error?.message}</p>
-      {unreachable && (
+      {unreachable && import.meta.env.DEV && (
         <p className="state-text state-text--hint">
           Vérifiez que l’API d’équipe tourne : <code>just dev</code> à la racine du dépôt ({API_URL}).
         </p>

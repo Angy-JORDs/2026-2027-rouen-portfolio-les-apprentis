@@ -23,7 +23,18 @@ async function get(path, params = {}) {
   try {
     response = await fetch(url, { headers: { Accept: 'application/json' } })
   } catch {
-    throw new ApiError(`API injoignable (${API_URL}). Lancez « just dev » à la racine du dépôt.`, 0)
+    // En ligne, un message neutre pour le visiteur ; en local, l'indication utile au développeur.
+    throw new ApiError(
+      import.meta.env.DEV
+        ? `API injoignable (${API_URL}). Lancez « just dev » à la racine du dépôt.`
+        : 'Données momentanément indisponibles. Réessayez dans quelques instants.',
+      0,
+    )
+  }
+
+  // Panne côté serveur (base indisponible…) : pas de détail technique pour le visiteur en ligne.
+  if (response.status >= 500 && !import.meta.env.DEV) {
+    throw new ApiError('Données momentanément indisponibles. Réessayez dans quelques instants.', response.status)
   }
 
   if (!response.ok) {

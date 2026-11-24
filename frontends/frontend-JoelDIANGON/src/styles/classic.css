@@ -70,15 +70,16 @@
 
 .cp-hero {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   gap: clamp(1.5rem, 5vw, 3.5rem);
   padding-bottom: 2.5rem;
   border-bottom: 1px solid var(--line);
 }
 
-/* Portrait dans un cadre circulaire, avec un fin liseré vert et un halo discret */
+/* Portrait dans un cadre circulaire, à gauche du nom, avec un fin liseré vert et un halo discret */
 .cp-portrait {
+  order: -1;
   margin: 0;
   width: clamp(170px, 20vw, 230px);
   aspect-ratio: 1;
