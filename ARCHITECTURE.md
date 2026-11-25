@@ -178,13 +178,17 @@ graph LR
 Requêtes exactes de `repositories/neo4j_repo.py` (exécutables dans Neo4j Browser en remplaçant les paramètres) :
 
 ```cypher
-// R4 - projets similaires (compétences partagées)
-MATCH (p:Projet {projet_slug: $slug})-[:UTILISE]->(s:Competence)<-[:UTILISE]-(autre:Projet)
+// R4 - projets similaires : autres projets du MÊME candidat partageant des compétences
+// (chaque portfolio étant personnel, il ne propose que les projets de son auteur)
+MATCH (c:Candidat)-[:REALISE]->(p:Projet {projet_slug: $slug})
+MATCH (c)-[:REALISE]->(autre:Projet)
 WHERE autre.projet_slug <> $slug
+MATCH (p)-[:UTILISE]->(s:Competence)<-[:UTILISE]-(autre)
+WITH autre, collect(DISTINCT s.skill_slug) AS competences
 RETURN autre.projet_slug AS projet_slug,
        autre.titre AS titre,
-       count(s) AS competences_communes,
-       collect(s.skill_slug) AS competences
+       size(competences) AS competences_communes,
+       competences
 ORDER BY competences_communes DESC, titre ASC
 LIMIT $limit
 

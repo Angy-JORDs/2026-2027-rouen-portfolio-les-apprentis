@@ -55,7 +55,7 @@ Exemples : [`/api/candidats/joel-diangon`](https://portfolio-api-joel.vercel.app
 | R1 `GET /api/candidats/{slug}` | MongoDB | `candidats.findOne({candidat_slug: slug})` (timeline calculée par l'API) |
 | R2 `GET /api/candidats/{slug}/projets` | MongoDB | `projets.countDocuments(q)` + `projets.find(q).sort({titre: 1}).skip(…).limit(size)`, avec `q = {candidat_slugs: slug}` (+ `competences: competence` si `?competence=`) |
 | R3 `GET /api/candidats/{slug}/stats` | MongoDB | `projets.aggregate([{$match: {candidat_slugs: slug}}, {$unwind: "$competences"}, {$group: {_id: "$competences", nombre_projets: {$sum: 1}}}, {$sort: {nombre_projets: -1, _id: 1}}, {$project: {_id: 0, skill_slug: "$_id", nombre_projets: 1}}])` |
-| R4 `GET /api/graph/projets/{slug}/similaires` | Neo4j | `MATCH (p:Projet {projet_slug: $slug})-[:UTILISE]->(s:Competence)<-[:UTILISE]-(autre:Projet) WHERE autre.projet_slug <> $slug RETURN … count(s) AS competences_communes … ORDER BY competences_communes DESC, titre ASC LIMIT $limit` |
+| R4 `GET /api/graph/projets/{slug}/similaires` | Neo4j | `MATCH (c:Candidat)-[:REALISE]->(p:Projet {projet_slug: $slug}) MATCH (c)-[:REALISE]->(autre:Projet) WHERE autre.projet_slug <> $slug MATCH (p)-[:UTILISE]->(s:Competence)<-[:UTILISE]-(autre) WITH autre, collect(DISTINCT s.skill_slug) AS competences RETURN … size(competences) AS competences_communes … ORDER BY competences_communes DESC, titre ASC LIMIT $limit` (projets du même candidat uniquement) |
 | R5 `GET /api/graph/competences/{slug}` | Neo4j | `MATCH (c:Candidat {candidat_slug: $slug}) OPTIONAL MATCH (c)-[:REALISE]->(p:Projet) OPTIONAL MATCH (p)-[:UTILISE]->(s:Competence) RETURN …` |
 | R6 `GET /api/competences/{slug}/candidats` | Neo4j | `MATCH (c:Candidat)-[:REALISE]->(p:Projet)-[:UTILISE]->(:Competence {skill_slug: $slug}) RETURN … count(DISTINCT p) AS nb_projets` |
 | R7 `GET /api/competences/{slug}/projets` | Neo4j + MongoDB | `MATCH (p:Projet)-[:UTILISE]->(:Competence {skill_slug: $slug}) RETURN p.projet_slug ORDER BY p.titre`, puis `projets.find({projet_slug: {$in: slugs}})` |
@@ -252,7 +252,8 @@ Fourni. Réponse : `{"status": "ok"}` (ne contacte pas les bases).
 
 - **Paramètres** : `slug` (chemin) = `projet_slug` ; `limit` (défaut 5, entre 1 et 50).
 - **Écran** : Détail d'un projet (bloc « projets similaires »).
-- Trié par `competences_communes` décroissant ; `competences` liste les compétences partagées.
+- Ne renvoie que les **autres projets du même candidat** (chaque portfolio est personnel) qui partagent au moins une compétence.
+- Trié par `competences_communes` décroissant (compétences distinctes), puis par titre ; `competences` liste les compétences partagées.
 - **Erreur** : `404` si le projet n'existe pas.
 
 ```json

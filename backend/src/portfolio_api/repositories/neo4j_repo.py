@@ -39,14 +39,18 @@ class Neo4jRepository:
         return records[0] if records else None
  
     async def get_similar_projets(self, slug: str, limit: int = 5) -> list[dict]:
-        """R4 — projets partageant des compétences avec `slug`, par nombre de compétences communes."""
+        """R4 — autres projets du MÊME candidat partageant des compétences avec `slug`,
+        par nombre de compétences communes (chaque portfolio ne montre que ses propres projets)."""
         query = """
-        MATCH (p:Projet {projet_slug: $slug})-[:UTILISE]->(s:Competence)<-[:UTILISE]-(autre:Projet)
+        MATCH (c:Candidat)-[:REALISE]->(p:Projet {projet_slug: $slug})
+        MATCH (c)-[:REALISE]->(autre:Projet)
         WHERE autre.projet_slug <> $slug
+        MATCH (p)-[:UTILISE]->(s:Competence)<-[:UTILISE]-(autre)
+        WITH autre, collect(DISTINCT s.skill_slug) AS competences
         RETURN autre.projet_slug AS projet_slug,
                autre.titre AS titre,
-               count(s) AS competences_communes,
-               collect(s.skill_slug) AS competences
+               size(competences) AS competences_communes,
+               competences
         ORDER BY competences_communes DESC, titre ASC
         LIMIT $limit
         """
