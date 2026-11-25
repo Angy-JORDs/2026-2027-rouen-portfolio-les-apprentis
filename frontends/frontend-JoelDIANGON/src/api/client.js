@@ -5,12 +5,26 @@
  */
 import { API_URL, CANDIDAT_SLUG } from '../config'
 
+/**
+ * Erreur d'appel à l'API. `code` est stable et sert à afficher un message traduit (voir ui/States.jsx) :
+ *   'unreachable' : API injoignable (réseau, serveur éteint) ; 'server' : erreur 5xx ;
+ *   'notFound' : 404 ; 'http' : tout autre statut en erreur.
+ * `message` (en français) reste l'indication technique d'origine, utile en développement.
+ */
 export class ApiError extends Error {
-  constructor(message, status) {
+  constructor(message, status, code = 'http') {
     super(message)
     this.name = 'ApiError'
     this.status = status
+    this.code = code
   }
+}
+
+/** Code stable d'un statut HTTP en erreur. */
+function codeFromStatus(status) {
+  if (status === 404) return 'notFound'
+  if (status >= 500) return 'server'
+  return 'http'
 }
 
 async function get(path, params = {}) {
@@ -29,12 +43,17 @@ async function get(path, params = {}) {
         ? `API injoignable (${API_URL}). Lancez « just dev » à la racine du dépôt.`
         : 'Données momentanément indisponibles. Réessayez dans quelques instants.',
       0,
+      'unreachable',
     )
   }
 
   // Panne côté serveur (base indisponible…) : pas de détail technique pour le visiteur en ligne.
   if (response.status >= 500 && !import.meta.env.DEV) {
-    throw new ApiError('Données momentanément indisponibles. Réessayez dans quelques instants.', response.status)
+    throw new ApiError(
+      'Données momentanément indisponibles. Réessayez dans quelques instants.',
+      response.status,
+      'server',
+    )
   }
 
   if (!response.ok) {
@@ -44,7 +63,7 @@ async function get(path, params = {}) {
     } catch {
       /* corps non JSON : on garde le statut HTTP */
     }
-    throw new ApiError(detail, response.status)
+    throw new ApiError(detail, response.status, codeFromStatus(response.status))
   }
   return response.json()
 }

@@ -1,10 +1,21 @@
 import { motion } from 'framer-motion'
+import { sectionText } from '../../content/sections'
+import { useLang, useT } from '../../i18n/LangContext'
+
+// Nom du bouton pour les lecteurs d'écran (espace avant les deux-points en français seulement)
+const TEXTES = {
+  fr: { nom: '{label} : {tagline}' },
+  en: { nom: '{label}: {tagline}' },
+}
 
 /**
  * Un élément flottant du parcours. Survol : léger halo + nom de la section ; clic : ouverture.
  * layout "free" (ordinateur/tablette) : placé sur l'arc ; layout "grid" (mobile) : dans une grille.
  */
 export default function SceneObject({ section, index, layout, dimmed, onOpen, onHover }) {
+  const { lang } = useLang()
+  const t = useT(TEXTES)
+  const { label, tagline } = sectionText(section, lang)
   const { Icon } = section
   const style = layout === 'free' ? { left: `${section.pos.x}%`, top: `${section.pos.y}%` } : undefined
 
@@ -29,7 +40,7 @@ export default function SceneObject({ section, index, layout, dimmed, onOpen, on
           <motion.button
             type="button"
             className="orb"
-            aria-label={`${section.label} : ${section.tagline}`}
+            aria-label={t('nom', { label, tagline })}
             whileHover={{ scale: 1.09 }}
             whileTap={{ scale: 0.95 }}
             transition={{ type: 'spring', stiffness: 260, damping: 18 }}
@@ -44,8 +55,8 @@ export default function SceneObject({ section, index, layout, dimmed, onOpen, on
             <Icon className="orb-icon" />
           </motion.button>
           <span className="orb-label" aria-hidden="true">
-            <span className="orb-label-title">{section.label}</span>
-            <span className="orb-label-sub">{section.tagline}</span>
+            <span className="orb-label-title">{label}</span>
+            <span className="orb-label-sub">{tagline}</span>
           </span>
         </motion.div>
       </div>

@@ -9,30 +9,73 @@ import { ErrorState, Loader } from '../components/ui/States'
 import { CERTIFICATIONS, LANGUES, isAssociatif } from '../content/static'
 import { useCandidat } from '../context/CandidatContext'
 import { useAsync } from '../hooks/useAsync'
-import { formatPeriod, humanizeKey, sortByDateDesc } from '../lib/format'
+import { useLang, useT } from '../i18n/LangContext'
+import { sortByDateDesc } from '../lib/format'
 import { skillTags } from '../sections/shared'
 
-const ANCRES = [
-  { id: 'experiences', label: 'Expériences' },
-  { id: 'formation', label: 'Formation' },
-  { id: 'projets', label: 'Projets' },
-  { id: 'competences', label: 'Compétences' },
-  { id: 'engagement', label: 'Engagement' },
-  { id: 'langues', label: 'Langues' },
-  { id: 'contact', label: 'Contact' },
-]
-
-const DOMAINES = {
-  langages: 'Langages',
-  bi: 'BI & data visualisation',
-  'data-ia': 'Data & IA',
-  'data-engineering': 'Data engineering',
-  frameworks: 'Bibliothèques & frameworks',
-  'bases-de-donnees': 'Bases de données',
-  'developpement-web': 'Développement web',
-  outils: 'Outils',
-  'gestion-de-projet': 'Gestion de projet',
+/**
+ * Textes de la page en français et en anglais. Les ancres (« ancre_… ») s'affichent en capitales (CSS).
+ * {nom} et {email} sont remplacés à l'affichage.
+ */
+const TEXTES = {
+  fr: {
+    chargement: 'Chargement du portfolio…',
+    retourScene: 'Retour à la scène',
+    versionImmersive: 'Version immersive',
+    sections: 'Sections',
+    ancre_experiences: 'Expériences',
+    ancre_formation: 'Formation',
+    ancre_projets: 'Projets',
+    ancre_competences: 'Compétences',
+    ancre_engagement: 'Engagement',
+    ancre_langues: 'Langues',
+    ancre_contact: 'Contact',
+    surtitre: 'Portfolio',
+    ecrire: 'Écrire à {nom} : {email}',
+    portrait: 'Portrait de {nom}',
+    experiences: 'Expériences professionnelles',
+    formation: 'Formation',
+    certifications: 'Certifications',
+    projets: 'Projets',
+    voirCode: 'Voir le code',
+    competences: 'Compétences',
+    engagement: 'Engagement associatif',
+    langues: 'Langues',
+    contact: 'Contact',
+    contactTexte: 'Ouvert aux échanges autour de la data, de la BI et de l’IA.',
+    retourImmersif: 'Revenir à la version immersive',
+  },
+  en: {
+    chargement: 'Loading the portfolio…',
+    retourScene: 'Back to the scene',
+    versionImmersive: 'Immersive version',
+    sections: 'Sections',
+    ancre_experiences: 'Experience',
+    ancre_formation: 'Education',
+    ancre_projets: 'Projects',
+    ancre_competences: 'Skills',
+    ancre_engagement: 'Involvement',
+    ancre_langues: 'Languages',
+    ancre_contact: 'Contact',
+    surtitre: 'Portfolio',
+    ecrire: 'Email {nom}: {email}',
+    portrait: 'Portrait of {nom}',
+    experiences: 'Professional experience',
+    formation: 'Education',
+    certifications: 'Certifications',
+    projets: 'Projects',
+    voirCode: 'View the code',
+    competences: 'Skills',
+    engagement: 'Community involvement',
+    langues: 'Languages',
+    contact: 'Contact',
+    contactTexte: 'Open to conversations about data, BI and AI.',
+    retourImmersif: 'Back to the immersive version',
+  },
 }
+
+/** Ancres de la barre du haut, dans l'ordre de la page (identifiants des sections « cp-… »). */
+const ANCRES = ['experiences', 'formation', 'projets', 'competences', 'engagement', 'langues', 'contact']
 
 function Section({ id, title, children }) {
   return (
@@ -52,10 +95,12 @@ function Section({ id, title, children }) {
 
 /**
  * Version « classique » du portfolio : une seule page qui défile, du plus récent au plus ancien.
- * Ouverte depuis « Voir la chronologie complète » (#/portfolio).
+ * Ouverte depuis « Voir la chronologie complète » (#/portfolio). Affichée dans la langue du site (fr / en).
  */
 export default function ClassicPortfolio({ navigate }) {
-  const { candidat, loading, error, reload, skillName } = useCandidat()
+  const { candidat, candidatFr, loading, error, reload, skillName } = useCandidat()
+  const { L } = useLang()
+  const t = useT(TEXTES)
   const projetsQ = useAsync('projets:', () => api.projets())
   const scrollRef = useRef(null)
 
@@ -75,14 +120,14 @@ export default function ClassicPortfolio({ navigate }) {
     return [...groupes.entries()]
   }, [candidat])
 
-  if (loading && !candidat) return <div className="cp"><Loader label="Chargement du portfolio…" /></div>
+  if (loading && !candidat) return <div className="cp"><Loader label={t('chargement')} /></div>
   if (error && !candidat) {
     return (
       <div className="cp">
         <div className="cp-inner">
           <ErrorState error={error} onRetry={reload}>
             <button type="button" className="btn" onClick={() => navigate('')}>
-              Retour à la scène
+              {t('retourScene')}
             </button>
           </ErrorState>
         </div>
@@ -90,16 +135,36 @@ export default function ClassicPortfolio({ navigate }) {
     )
   }
 
-  const experiences = candidat.experiences || []
-  const pros = sortByDateDesc(experiences.filter((e) => !isAssociatif(e)))
-  const assos = sortByDateDesc(experiences.filter(isAssociatif))
+  // Tri pro / associatif sur la donnée française : isAssociatif reconnaît des noms français
+  // (« Club informatique ESIGELEC »), que la version anglaise remplace (« ESIGELEC Computer Club »).
+  const experiencesFr = candidatFr?.experiences || candidat.experiences || []
+  const pros = sortByDateDesc(experiencesFr.filter((e) => !isAssociatif(e)))
+  const assos = sortByDateDesc(experiencesFr.filter(isAssociatif))
   const formations = sortByDateDesc(candidat.formations || [])
-  const projets = [...(projetsQ.data?.items || [])].sort((a, b) =>
-    String(b.date_fin || b.date_debut || '9999').localeCompare(String(a.date_fin || a.date_debut || '9999')),
-  )
-  const langues = candidat.langues || LANGUES
-  const certifications = candidat.certifications || CERTIFICATIONS
+  // Les projets arrivent de l'API en français : traduits ici, à l'affichage
+  const projets = [...(projetsQ.data?.items || [])]
+    .sort((a, b) =>
+      String(b.date_fin || b.date_debut || '9999').localeCompare(String(a.date_fin || a.date_debut || '9999')),
+    )
+    .map(L.projet)
+  const langues = candidat.langues || LANGUES.map(L.langue)
+  const certifications = candidat.certifications || CERTIFICATIONS.map(L.certification)
   const liens = candidat.liens || {}
+  const nomComplet = [candidat.prenom, candidat.nom].filter(Boolean).join(' ')
+
+  /** Expérience (donnée française) -> élément de frise, dans la langue du site. */
+  const versFrise = (experienceFr, i) => {
+    const e = L.experience(experienceFr)
+    return {
+      // Clé tirée du français : identique dans les deux langues (pas de nouvelle animation au changement)
+      key: `${experienceFr.entreprise}-${i}`,
+      period: L.period(e.debut, e.fin),
+      title: e.poste,
+      org: e.entreprise,
+      description: e.description,
+      tags: skillTags(e.competences, skillName),
+    }
+  }
 
   return (
     <motion.div
@@ -111,13 +176,14 @@ export default function ClassicPortfolio({ navigate }) {
       transition={{ duration: 0.5 }}
     >
       <header className="cp-bar">
-        <button type="button" className="cp-back" onClick={() => navigate('')}>
-          <ArrowLeftIcon /> <span>Version immersive</span>
+        {/* aria-label : sur téléphone le texte est masqué, le bouton garde un nom pour les lecteurs d'écran */}
+        <button type="button" className="cp-back" onClick={() => navigate('')} aria-label={t('versionImmersive')}>
+          <ArrowLeftIcon /> <span>{t('versionImmersive')}</span>
         </button>
-        <nav className="cp-anchors" aria-label="Sections">
-          {ANCRES.map((a) => (
-            <button key={a.id} type="button" onClick={() => goTo(a.id)}>
-              {a.label}
+        <nav className="cp-anchors" aria-label={t('sections')}>
+          {ANCRES.map((id) => (
+            <button key={id} type="button" onClick={() => goTo(id)}>
+              {t(`ancre_${id}`)}
             </button>
           ))}
         </nav>
@@ -127,11 +193,22 @@ export default function ClassicPortfolio({ navigate }) {
       <div className="cp-inner">
         <section className="cp-hero">
           <div className="cp-hero-text">
-            <p className="eyebrow">Portfolio</p>
+            <p className="eyebrow">{t('surtitre')}</p>
             <h1 className="cp-name">
               {candidat.prenom} {candidat.nom}
             </h1>
             <p className="cp-role">{candidat.titre}</p>
+            {/* E-mail juste sous le titre : le moyen le plus direct de joindre Joël */}
+            {liens.email && (
+              <a
+                className="cp-email"
+                href={`mailto:${liens.email}`}
+                aria-label={t('ecrire', { nom: nomComplet, email: liens.email })}
+              >
+                <ContactIcon />
+                <span>{liens.email}</span>
+              </a>
+            )}
             {candidat.bio && <p className="cp-bio">{candidat.bio}</p>}
             <div className="cp-hero-actions">
               <CvButton className="action-btn--large" />
@@ -150,7 +227,7 @@ export default function ClassicPortfolio({ navigate }) {
           <figure className="cp-portrait">
             <img
               src="/portrait-joel-diangon.webp"
-              alt={`Portrait de ${candidat.prenom} ${candidat.nom}`}
+              alt={t('portrait', { nom: nomComplet })}
               width="640"
               height="640"
               decoding="async"
@@ -158,29 +235,20 @@ export default function ClassicPortfolio({ navigate }) {
           </figure>
         </section>
 
-        <Section id="experiences" title="Expériences professionnelles">
-          <Timeline
-            items={pros.map((e, i) => ({
-              key: `${e.entreprise}-${i}`,
-              period: formatPeriod(e.debut, e.fin),
-              title: e.poste,
-              org: e.entreprise,
-              description: e.description,
-              tags: skillTags(e.competences, skillName),
-            }))}
-          />
+        <Section id="experiences" title={t('experiences')}>
+          <Timeline items={pros.map(versFrise)} />
         </Section>
 
-        <Section id="formation" title="Formation">
+        <Section id="formation" title={t('formation')}>
           <Timeline
             items={formations.map((f, i) => ({
               key: `${f.ecole}-${i}`,
-              period: formatPeriod(f.debut, f.fin),
+              period: L.period(f.debut, f.fin),
               title: f.diplome,
               org: f.ecole,
             }))}
           />
-          <h3 className="cp-h3">Certifications</h3>
+          <h3 className="cp-h3">{t('certifications')}</h3>
           <ul className="cp-list">
             {certifications.map((c) => (
               <li key={c.nom}>
@@ -190,43 +258,44 @@ export default function ClassicPortfolio({ navigate }) {
           </ul>
         </Section>
 
-        <Section id="projets" title="Projets">
+        <Section id="projets" title={t('projets')}>
           {projetsQ.error && <ErrorState error={projetsQ.error} onRetry={projetsQ.reload} />}
           {!projetsQ.data && !projetsQ.error && <Loader />}
           <div className="cp-projects">
-            {projets.map((p) => (
-              <article key={p.projet_slug} className="cp-project">
-                <p className="card-kicker">{p.contexte}</p>
-                <h3 className="cp-project-title">{p.titre}</h3>
-                {formatPeriod(p.date_debut, p.date_fin) && (
-                  <p className="card-period">{formatPeriod(p.date_debut, p.date_fin)}</p>
-                )}
-                <p className="cp-project-desc">{p.description}</p>
-                {Object.keys(p.metriques || {}).length > 0 && (
-                  <ul className="cp-metrics">
-                    {Object.entries(p.metriques).map(([k, v]) => (
-                      <li key={k}>
-                        <strong>{String(v)}</strong> {humanizeKey(k)}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                <Tags items={skillTags(p.competences, skillName)} />
-                {p.liens?.github && (
-                  <a className="cp-link" href={p.liens.github} target="_blank" rel="noreferrer">
-                    Voir le code <ExternalIcon />
-                  </a>
-                )}
-              </article>
-            ))}
+            {projets.map((p) => {
+              const periode = L.period(p.date_debut, p.date_fin)
+              return (
+                <article key={p.projet_slug} className="cp-project">
+                  <p className="card-kicker">{p.contexte}</p>
+                  <h3 className="cp-project-title">{p.titre}</h3>
+                  {periode && <p className="card-period">{periode}</p>}
+                  <p className="cp-project-desc">{p.description}</p>
+                  {Object.keys(p.metriques || {}).length > 0 && (
+                    <ul className="cp-metrics">
+                      {Object.entries(p.metriques).map(([k, v]) => (
+                        <li key={k}>
+                          <strong>{String(v)}</strong> {L.metricLabel(k)}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <Tags items={skillTags(p.competences, skillName)} />
+                  {p.liens?.github && (
+                    <a className="cp-link" href={p.liens.github} target="_blank" rel="noreferrer">
+                      {t('voirCode')} <ExternalIcon />
+                    </a>
+                  )}
+                </article>
+              )
+            })}
           </div>
         </Section>
 
-        <Section id="competences" title="Compétences">
+        <Section id="competences" title={t('competences')}>
           <div className="cp-skills">
             {parDomaine.map(([domaine, liste]) => (
               <div key={domaine} className="cp-skill-group">
-                <h3 className="cp-h3">{DOMAINES[domaine] || domaine}</h3>
+                <h3 className="cp-h3">{L.domain(domaine)}</h3>
                 <ul className="tags">
                   {liste.map((c) => (
                     <li key={c.skill_slug}>
@@ -240,21 +309,12 @@ export default function ClassicPortfolio({ navigate }) {
         </Section>
 
         {assos.length > 0 && (
-          <Section id="engagement" title="Engagement associatif">
-            <Timeline
-              items={assos.map((e, i) => ({
-                key: `${e.entreprise}-${i}`,
-                period: formatPeriod(e.debut, e.fin),
-                title: e.poste,
-                org: e.entreprise,
-                description: e.description,
-                tags: skillTags(e.competences, skillName),
-              }))}
-            />
+          <Section id="engagement" title={t('engagement')}>
+            <Timeline items={assos.map(versFrise)} />
           </Section>
         )}
 
-        <Section id="langues" title="Langues">
+        <Section id="langues" title={t('langues')}>
           <ul className="cp-langues">
             {langues.map((l) => (
               <li key={l.langue}>
@@ -264,10 +324,8 @@ export default function ClassicPortfolio({ navigate }) {
           </ul>
         </Section>
 
-        <Section id="contact" title="Contact">
-          <p className="cp-bio">
-            Ouvert aux échanges autour de la data, de la BI et de l’IA.
-          </p>
+        <Section id="contact" title={t('contact')}>
+          <p className="cp-bio">{t('contactTexte')}</p>
           <div className="cp-hero-actions">
             <CvButton className="action-btn--large" />
             {liens.email && (
@@ -290,7 +348,7 @@ export default function ClassicPortfolio({ navigate }) {
 
         <footer className="cp-footer">
           <button type="button" className="btn" onClick={() => navigate('')}>
-            <ArrowLeftIcon /> Revenir à la version immersive
+            <ArrowLeftIcon /> {t('retourImmersif')}
           </button>
         </footer>
       </div>

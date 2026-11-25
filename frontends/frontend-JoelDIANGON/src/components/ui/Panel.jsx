@@ -1,8 +1,15 @@
 import { useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
+import { sectionText } from '../../content/sections'
+import { useLang, useT } from '../../i18n/LangContext'
 import { ArrowLeftIcon, CloseIcon } from '../icons'
 
 const EASE = [0.22, 1, 0.36, 1]
+
+const TEXTES = {
+  fr: { retour: 'Retour à la scène', fermer: 'Fermer et revenir à la scène' },
+  en: { retour: 'Back to the scene', fermer: 'Close and return to the scene' },
+}
 
 /**
  * Panneau d'une section, ouvert par-dessus la scène (qui plonge vers l'élément choisi).
@@ -12,6 +19,8 @@ export default function Panel({ section, onClose, children }) {
   const panelRef = useRef(null)
   const onCloseRef = useRef(onClose)
   onCloseRef.current = onClose
+  const { lang } = useLang()
+  const t = useT(TEXTES)
 
   useEffect(() => {
     const previous = document.activeElement
@@ -27,6 +36,7 @@ export default function Panel({ section, onClose, children }) {
   }, [])
 
   const { Icon } = section
+  const { label, tagline } = sectionText(section, lang)
 
   return (
     <motion.div
@@ -50,9 +60,10 @@ export default function Panel({ section, onClose, children }) {
         transition={{ duration: 0.7, delay: 0.18, ease: EASE }}
       >
         <header className="panel-head">
-          <button type="button" className="panel-back" onClick={() => onClose()}>
+          {/* aria-label : sur téléphone, seule la flèche reste visible (texte masqué en CSS) */}
+          <button type="button" className="panel-back" aria-label={t('retour')} onClick={() => onClose()}>
             <ArrowLeftIcon />
-            <span>Retour à la scène</span>
+            <span>{t('retour')}</span>
           </button>
           <div className="panel-title-wrap">
             {Icon && (
@@ -61,13 +72,13 @@ export default function Panel({ section, onClose, children }) {
               </span>
             )}
             <div>
-              <p className="panel-kicker">{section.tagline}</p>
+              <p className="panel-kicker">{tagline}</p>
               <h2 id="panel-title" className="panel-title">
-                {section.label}
+                {label}
               </h2>
             </div>
           </div>
-          <button type="button" className="panel-close" aria-label="Fermer et revenir à la scène" onClick={() => onClose()}>
+          <button type="button" className="panel-close" aria-label={t('fermer')} onClick={() => onClose()}>
             <CloseIcon />
           </button>
         </header>

@@ -2,39 +2,71 @@ import { motion } from 'framer-motion'
 import { useCvViewer } from '../components/cv/CvViewer'
 import { ArrowRightIcon, ContactIcon, CvIcon, ExternalIcon, GithubIcon, LinkedinIcon } from '../components/icons'
 import { useCvAvailable } from '../components/ui/TopActions'
+import { useT } from '../i18n/LangContext'
 import { WithCandidat } from './shared'
 
+const TEXTES = {
+  fr: {
+    // Accroche avec ses mises en valeur (<em>) : un élément JSX plutôt qu'un simple texte
+    accroche: (
+      <>
+        Ouvert aux échanges autour de la <em>data</em>, de la <em>business intelligence</em> et de l’
+        <em>intelligence artificielle</em>.
+      </>
+    ),
+    email: 'E-mail',
+    linkedin: 'Parcours, recommandations, messages',
+    github: 'Code des projets et notebooks',
+    cv: 'Mon CV',
+    cvDetail: 'Voir le CV complet (PDF)',
+  },
+  en: {
+    accroche: (
+      <>
+        Open to conversations about <em>data</em>, <em>business intelligence</em> and{' '}
+        <em>artificial intelligence</em>.
+      </>
+    ),
+    email: 'Email',
+    linkedin: 'Background, recommendations, messages',
+    github: 'Project code and notebooks',
+    cv: 'My CV',
+    cvDetail: 'View the full CV (PDF)',
+  },
+}
+
+/** Réseaux reconnus : nom propre (non traduit) et icône ; le détail est dans TEXTES, sous la même clé. */
 const RESEAUX = {
-  linkedin: { label: 'LinkedIn', detail: 'Parcours, recommandations, messages', Icon: LinkedinIcon },
-  github: { label: 'GitHub', detail: 'Code des projets et notebooks', Icon: GithubIcon },
+  linkedin: { label: 'LinkedIn', Icon: LinkedinIcon },
+  github: { label: 'GitHub', Icon: GithubIcon },
 }
 
 export default function ContactSection() {
   // Le CV apparaît en tête des contacts dès que public/cv-joel-diangon.pdf existe.
   const cvAvailable = useCvAvailable()
   const { openCv } = useCvViewer()
+  const t = useT(TEXTES)
 
   return (
     <WithCandidat>
       {({ candidat }) => {
         const liens = Object.entries(candidat.liens || {})
           .filter(([, url]) => url)
-          .map(([cle, url]) =>
-            cle === 'email'
-              ? { cle, url: `mailto:${url}`, label: 'E-mail', detail: url, Icon: ContactIcon, interne: true }
-              : { cle, url, ...(RESEAUX[cle] || { label: cle, detail: url, Icon: ExternalIcon }) },
-          )
+          .map(([cle, url]) => {
+            if (cle === 'email') {
+              return { cle, url: `mailto:${url}`, label: t('email'), detail: url, Icon: ContactIcon, interne: true }
+            }
+            if (RESEAUX[cle]) return { cle, url, ...RESEAUX[cle], detail: t(cle) }
+            return { cle, url, label: cle, detail: url, Icon: ExternalIcon }
+          })
           // L'e-mail en premier : c'est le moyen de contact le plus direct pour un recruteur
           .sort((a, b) => (b.cle === 'email') - (a.cle === 'email'))
         if (cvAvailable) {
-          liens.unshift({ cle: 'cv', label: 'Mon CV', detail: 'Voir le CV complet (PDF)', Icon: CvIcon })
+          liens.unshift({ cle: 'cv', label: t('cv'), detail: t('cvDetail'), Icon: CvIcon })
         }
         return (
           <div className="section-narrow contact">
-            <p className="contact-lead">
-              Ouvert aux échanges autour de la <em>data</em>, de la <em>business intelligence</em> et de l’
-              <em>intelligence artificielle</em>.
-            </p>
+            <p className="contact-lead">{t('accroche')}</p>
             <ul className="contact-links">
               {liens.map((lien, i) => (
                 <motion.li

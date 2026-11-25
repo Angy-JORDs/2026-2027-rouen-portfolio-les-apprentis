@@ -247,6 +247,14 @@
   white-space: nowrap;
 }
 
+/* Ligne secondaire affichée en entier (chiffres clés, descriptions) : elle passe à la ligne */
+.rs-item-sub.is-wrap {
+  margin-top: 0.15rem;
+  line-height: 1.45;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
 @media (max-width: 1100px) {
   .scene-search {
     width: min(460px, 44vw);

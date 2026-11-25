@@ -4,9 +4,11 @@ import { CvViewerProvider } from './components/cv/CvViewer'
 import Scene from './components/scene/Scene'
 import Nav from './components/ui/Nav'
 import Panel from './components/ui/Panel'
+import { useErrorMessage } from './components/ui/States'
 import { SECTION_BY_ID } from './content/sections'
 import { CandidatProvider, useCandidat } from './context/CandidatContext'
 import { useHashRoute } from './hooks/useHashRoute'
+import { LangProvider, useT } from './i18n/LangContext'
 import ClassicPortfolio from './pages/ClassicPortfolio'
 import { SECTION_COMPONENTS } from './sections'
 
@@ -14,11 +16,14 @@ export default function App() {
   return (
     // reducedMotion="user" : animations réduites si le système le demande (accessibilité)
     <MotionConfig reducedMotion="user">
-      <CandidatProvider>
-        <CvViewerProvider>
-          <Portfolio />
-        </CvViewerProvider>
-      </CandidatProvider>
+      {/* La langue enveloppe tout : le profil (CandidatProvider) est servi dans la langue choisie */}
+      <LangProvider>
+        <CandidatProvider>
+          <CvViewerProvider>
+            <Portfolio />
+          </CvViewerProvider>
+        </CandidatProvider>
+      </LangProvider>
     </MotionConfig>
   )
 }
@@ -54,9 +59,19 @@ function Portfolio() {
   )
 }
 
-/** Petit bandeau en haut si l'API d'équipe ne répond pas (le reste de la page reste utilisable). */
+const TEXTES_BANDEAU = {
+  fr: { reessayer: 'Réessayer' },
+  en: { reessayer: 'Try again' },
+}
+
+/**
+ * Petit bandeau en haut si l'API d'équipe ne répond pas (le reste de la page reste utilisable).
+ * Le message est traduit à l'affichage, d'après le code de l'erreur (voir ui/States.jsx).
+ */
 function ApiBanner() {
   const { error, reload } = useCandidat()
+  const t = useT(TEXTES_BANDEAU)
+  const message = useErrorMessage()
   return (
     <AnimatePresence>
       {error && (
@@ -67,9 +82,9 @@ function ApiBanner() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
         >
-          <span>{error.message}</span>
+          <span>{message(error)}</span>
           <button type="button" className="btn btn--small" onClick={reload}>
-            Réessayer
+            {t('reessayer')}
           </button>
         </motion.div>
       )}

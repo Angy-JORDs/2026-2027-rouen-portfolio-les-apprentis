@@ -5,9 +5,23 @@ import Tags from '../components/ui/Tags'
 import { ErrorState, Loader } from '../components/ui/States'
 import { useCandidat } from '../context/CandidatContext'
 import { useAsync } from '../hooks/useAsync'
-import { formatPeriod, humanizeKey, truncate } from '../lib/format'
+import { useLang, useT } from '../i18n/LangContext'
+import { truncate } from '../lib/format'
 import ProjetDetail from './ProjetDetail'
 import { skillTags } from './shared'
+
+const TEXTES = {
+  fr: {
+    chargement: 'Chargement des projets…',
+    filtrer: 'Filtrer par compétence',
+    aucun: 'Aucun projet n’utilise cette compétence.',
+  },
+  en: {
+    chargement: 'Loading projects…',
+    filtrer: 'Filter by skill',
+    aucun: 'No project uses this skill.',
+  },
+}
 
 /** Galerie des projets (R2, filtrable par compétence) ou fiche détaillée (#/projets/<slug>). */
 export default function ProjetsSection({ route, navigate }) {
@@ -16,11 +30,13 @@ export default function ProjetsSection({ route, navigate }) {
 }
 
 function ProjetsGallery({ competence, navigate }) {
-  const { skillName, candidat } = useCandidat()
+  const { skillName } = useCandidat()
+  const t = useT(TEXTES)
+  const { L } = useLang()
   const tous = useAsync('projets:', () => api.projets())
   const filtres = useAsync(`projets:${competence || ''}`, () => api.projets({ competence }))
 
-  // Filtres proposés : les compétences les plus utilisées dans mes projets
+  // Filtres proposés : les compétences les plus utilisées dans mes projets (comptées par slug, libellé traduit)
   const filtresDisponibles = useMemo(() => {
     const compte = new Map()
     for (const p of tous.data?.items || []) for (const s of p.competences) compte.set(s, (compte.get(s) || 0) + 1)
@@ -33,14 +49,14 @@ function ProjetsGallery({ competence, navigate }) {
   const selection = (slug) => navigate(slug === competence ? 'projets' : `projets?competence=${encodeURIComponent(slug)}`)
 
   if (tous.error) return <ErrorState error={tous.error} onRetry={tous.reload} />
-  if (!tous.data) return <Loader label="Chargement des projets…" />
+  if (!tous.data) return <Loader label={t('chargement')} />
 
   const projets = filtres.data?.items || []
 
   return (
     <div>
       <div className="filters">
-        <p className="eyebrow">Filtrer par compétence</p>
+        <p className="eyebrow">{t('filtrer')}</p>
         <Tags items={filtresDisponibles} onSelect={selection} active={competence} />
       </div>
 
@@ -49,8 +65,11 @@ function ProjetsGallery({ competence, navigate }) {
       ) : (
         <motion.div className="cards" layout>
           <AnimatePresence mode="popLayout">
-            {projets.map((p, i) => {
+            {projets.map((brut, i) => {
+              // Projet de l'API (en français) -> langue du site : titre, contexte, description, valeurs des métriques
+              const p = L.projet(brut)
               const metrique = Object.entries(p.metriques || {})[0]
+              const periode = L.period(p.date_debut, p.date_fin)
               return (
                 <motion.button
                   layout
@@ -65,13 +84,11 @@ function ProjetsGallery({ competence, navigate }) {
                 >
                   <p className="card-kicker">{p.contexte}</p>
                   <h3 className="card-title">{p.titre}</h3>
-                  {formatPeriod(p.date_debut, p.date_fin) && (
-                    <p className="card-period">{formatPeriod(p.date_debut, p.date_fin)}</p>
-                  )}
+                  {periode && <p className="card-period">{periode}</p>}
                   <p className="card-desc">{truncate(p.description, 150)}</p>
                   {metrique && (
                     <p className="card-metric">
-                      <strong>{String(metrique[1])}</strong> {humanizeKey(metrique[0])}
+                      <strong>{String(metrique[1])}</strong> {L.metricLabel(metrique[0])}
                     </p>
                   )}
                   <Tags items={skillTags(p.competences, skillName)} max={4} />
@@ -82,7 +99,7 @@ function ProjetsGallery({ competence, navigate }) {
         </motion.div>
       )}
       {!filtres.loading && !filtres.error && projets.length === 0 && (
-        <p className="empty">Aucun projet n’utilise cette compétence.</p>
+        <p className="empty">{t('aucun')}</p>
       )}
     </div>
   )

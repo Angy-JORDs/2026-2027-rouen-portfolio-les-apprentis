@@ -5,8 +5,31 @@ import Tags from '../components/ui/Tags'
 import { ErrorState, Loader } from '../components/ui/States'
 import { useCandidat } from '../context/CandidatContext'
 import { useAsync } from '../hooks/useAsync'
-import { formatPeriod, humanizeKey } from '../lib/format'
+import { useLang, useT } from '../i18n/LangContext'
 import { skillTags } from './shared'
+
+const TEXTES = {
+  fr: {
+    retour: 'Tous les projets',
+    chargement: 'Chargement du projet…',
+    competences: 'Compétences mobilisées',
+    github: 'Voir le code sur GitHub',
+    similaires: 'Projets similaires',
+    recherche: 'Recherche dans le graphe…',
+    aucunSimilaire: 'Aucun projet ne partage de compétence avec celui-ci.',
+    communes: ({ n }) => `${n} compétence${n > 1 ? 's' : ''} commune${n > 1 ? 's' : ''}`,
+  },
+  en: {
+    retour: 'All projects',
+    chargement: 'Loading project…',
+    competences: 'Skills used',
+    github: 'View the code on GitHub',
+    similaires: 'Similar projects',
+    recherche: 'Searching the graph…',
+    aucunSimilaire: 'No other project shares a skill with this one.',
+    communes: ({ n }) => `${n} skill${n === 1 ? '' : 's'} in common`,
+  },
+}
 
 /**
  * Fiche d'un projet (R8) + projets similaires (R4).
@@ -14,13 +37,15 @@ import { skillTags } from './shared'
  */
 export default function ProjetDetail({ slug, navigate }) {
   const { skillName } = useCandidat()
+  const t = useT(TEXTES)
+  const { L } = useLang()
   const projet = useAsync(`projet:${slug}`, () => api.projet(slug))
   const similaires = useAsync(`similaires:${slug}`, () => api.similaires(slug, 8))
   const mesProjets = useAsync('projets:', () => api.projets())
 
   const retour = (
     <button type="button" className="link-back" onClick={() => navigate('projets')}>
-      <ArrowLeftIcon /> Tous les projets
+      <ArrowLeftIcon /> {t('retour')}
     </button>
   )
 
@@ -32,13 +57,14 @@ export default function ProjetDetail({ slug, navigate }) {
       </div>
     )
   }
-  if (!projet.data) return <Loader label="Chargement du projet…" />
+  if (!projet.data) return <Loader label={t('chargement')} />
 
-  const p = projet.data
+  // Projet de l'API (en français) -> langue du site : titre, contexte, description, valeurs des métriques
+  const p = L.projet(projet.data)
   const miens = new Set((mesProjets.data?.items || []).map((x) => x.projet_slug))
   const proches = (similaires.data?.similaires || []).filter((s) => miens.has(s.projet_slug)).slice(0, 4)
   const metriques = Object.entries(p.metriques || {})
-  const periode = formatPeriod(p.date_debut, p.date_fin)
+  const periode = L.period(p.date_debut, p.date_fin)
 
   return (
     <motion.article
@@ -63,14 +89,14 @@ export default function ProjetDetail({ slug, navigate }) {
             <dl className="metrics">
               {metriques.map(([cle, valeur]) => (
                 <div key={cle} className="metric">
-                  <dt>{humanizeKey(cle)}</dt>
+                  <dt>{L.metricLabel(cle)}</dt>
                   <dd>{String(valeur)}</dd>
                 </div>
               ))}
             </dl>
           )}
 
-          <p className="eyebrow">Compétences mobilisées</p>
+          <p className="eyebrow">{t('competences')}</p>
           <Tags
             items={skillTags(p.competences, skillName)}
             onSelect={(s) => navigate(`projets?competence=${encodeURIComponent(s)}`)}
@@ -78,17 +104,17 @@ export default function ProjetDetail({ slug, navigate }) {
 
           {p.liens?.github && (
             <a className="btn btn--ghost" href={p.liens.github} target="_blank" rel="noreferrer">
-              <GithubIcon /> Voir le code sur GitHub <ExternalIcon />
+              <GithubIcon /> {t('github')} <ExternalIcon />
             </a>
           )}
         </div>
 
         <aside>
-          <p className="eyebrow">Projets similaires</p>
-          {similaires.loading && <Loader label="Recherche dans le graphe…" />}
+          <p className="eyebrow">{t('similaires')}</p>
+          {similaires.loading && <Loader label={t('recherche')} />}
           {similaires.error && <ErrorState error={similaires.error} onRetry={similaires.reload} />}
           {!similaires.loading && !similaires.error && proches.length === 0 && (
-            <p className="empty">Aucun projet ne partage de compétence avec celui-ci.</p>
+            <p className="empty">{t('aucunSimilaire')}</p>
           )}
           <ul className="similar-list">
             {proches.map((s, i) => (
@@ -99,12 +125,12 @@ export default function ProjetDetail({ slug, navigate }) {
                 transition={{ delay: 0.2 + i * 0.08 }}
               >
                 <button type="button" className="similar" onClick={() => navigate(`projets/${s.projet_slug}`)}>
-                  <span className="similar-score" aria-label={`${s.competences_communes} compétences communes`}>
+                  <span className="similar-score" aria-label={t('communes', { n: s.competences_communes })}>
                     {s.competences_communes}
                   </span>
                   <span className="similar-body">
-                    <span className="similar-title">{s.titre}</span>
-                    <span className="similar-skills">{s.competences.map(skillName).join(' · ')}</span>
+                    <span className="similar-title">{L.projetTitre(s.projet_slug, s.titre)}</span>
+                    <span className="similar-skills">{s.competences.map((c) => skillName(c)).join(' · ')}</span>
                   </span>
                   <ArrowRightIcon className="similar-arrow" />
                 </button>
