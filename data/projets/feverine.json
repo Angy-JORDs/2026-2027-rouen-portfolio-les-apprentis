@@ -1,0 +1,35 @@
+[
+  {
+    "projet_slug": "analyse-modelisation-python",
+    "candidat_slugs": ["fernande-kedi"],
+    "titre": "Analyse et modélisation de données avec Python",
+    "contexte": "Projet data — ESIGELEC",
+    "description": "Nettoyage et préparation des données, analyse exploratoire, visualisation, puis modèles prédictifs (régression linéaire, Naive Bayes, arbre de décision) évalués et comparés.",
+    "competences": ["python", "pandas", "numpy", "matplotlib", "scikit-learn"],
+    "metriques": { "modeles": 3 },
+    "liens": {},
+    "images": []
+  },
+  {
+    "projet_slug": "dashboard-ventes-power-bi",
+    "candidat_slugs": ["fernande-kedi"],
+    "titre": "Analyse et visualisation de ventes avec Power BI",
+    "contexte": "Projet data — ESIGELEC",
+    "description": "Analyse des indicateurs clés (chiffre d'affaires, ventes par catégorie, évolution mensuelle) et création d'un tableau de bord interactif pour identifier les produits les plus vendus.",
+    "competences": ["power-bi", "excel"],
+    "metriques": {},
+    "liens": {},
+    "images": []
+  },
+  {
+    "projet_slug": "chaine-logistique-rfid-ml",
+    "candidat_slugs": ["fernande-kedi"],
+    "titre": "Amélioration de la chaîne logistique par RFID et Machine Learning",
+    "contexte": "Plateforme d'analyse prédictive — ESIGELEC",
+    "description": "Prétraitement de données temporelles RFID, algorithme analytique déterministe, trois classifieurs supervisés (Random Forest, KNN, SVM) comparés, et API Flask avec interface web pour lancer et visualiser plusieurs traitements.",
+    "competences": ["python", "pandas", "numpy", "scikit-learn", "machine-learning", "flask"],
+    "metriques": { "modeles": 3 },
+    "liens": {},
+    "images": []
+  }
+]
