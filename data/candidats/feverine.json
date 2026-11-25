@@ -1,0 +1,54 @@
+{
+  "candidat_slug": "fernande-kedi",
+  "prenom": "Fernande",
+  "nom": "KEDI ELOUNDOU",
+  "titre": "Alternante Data Analyst chez Sanofi · Élève-ingénieure ESIGELEC",
+  "bio": "Élève-ingénieure à l'ESIGELEC, je me spécialise en analyse de données et en développement d'outils d'aide à la décision. J'applique Python, SQL et la visualisation de données (Power BI) en alternance chez Sanofi.",
+  "liens": {
+    "linkedin": "https://www.linkedin.com/in/fernande-kedi-eloundou-67a200347?utm_source=share_via&utm_content=pro-file&utm_medium=member_ios",
+    "email": "mailto:fernande.kedi@groupe-esigelec.org"
+  },
+  "experiences": [
+    {
+      "entreprise": "Sanofi",
+      "poste": "Alternante Data Analyst",
+      "debut": "2026-09",
+      "fin": null,
+      "description": "Alternance de 12 mois en tant que Data Analyst.",
+      "competences": []
+    },
+    {
+      "entreprise": "K2M Consulting",
+      "poste": "Stagiaire Technicien Data Analyst",
+      "debut": "2026-06",
+      "fin": "2026-07",
+      "description": "Analyse de données multi-domaines, outils internes Streamlit, pipelines MongoDB, validation et contrôle qualité des données, documentation technique sur Confluence.",
+      "competences": ["python", "streamlit", "mongodb", "confluence"]
+    }
+  ],
+  "formations": [
+    { "ecole": "ESIGELEC", "diplome": "Diplôme d'ingénieur", "debut": "2024-09", "fin": "2027-06" }
+  ],
+  "competences": [
+    { "skill_slug": "python", "nom": "Python", "domaine": "langages", "niveau": null },
+    { "skill_slug": "java", "nom": "Java", "domaine": "langages", "niveau": null },
+    { "skill_slug": "c", "nom": "C", "domaine": "langages", "niveau": null },
+    { "skill_slug": "sql", "nom": "SQL", "domaine": "bases-de-donnees", "niveau": null },
+    { "skill_slug": "mysql", "nom": "MySQL", "domaine": "bases-de-donnees", "niveau": null },
+    { "skill_slug": "oracle-sql", "nom": "Oracle SQL", "domaine": "bases-de-donnees", "niveau": null },
+    { "skill_slug": "mongodb", "nom": "MongoDB", "domaine": "bases-de-donnees", "niveau": null },
+    { "skill_slug": "neo4j", "nom": "Neo4j", "domaine": "bases-de-donnees", "niveau": null },
+    { "skill_slug": "pandas", "nom": "Pandas", "domaine": "data", "niveau": null },
+    { "skill_slug": "numpy", "nom": "NumPy", "domaine": "data", "niveau": null },
+    { "skill_slug": "matplotlib", "nom": "Matplotlib", "domaine": "data", "niveau": null },
+    { "skill_slug": "scikit-learn", "nom": "Scikit-learn", "domaine": "data", "niveau": null },
+    { "skill_slug": "machine-learning", "nom": "Machine Learning", "domaine": "data", "niveau": null },
+    { "skill_slug": "power-bi", "nom": "Power BI", "domaine": "data", "niveau": null },
+    { "skill_slug": "excel", "nom": "Excel", "domaine": "data", "niveau": null },
+    { "skill_slug": "flask", "nom": "Flask", "domaine": "web", "niveau": null },
+    { "skill_slug": "fastapi", "nom": "FastAPI", "domaine": "web", "niveau": null },
+    { "skill_slug": "streamlit", "nom": "Streamlit", "domaine": "web", "niveau": null },
+    { "skill_slug": "git", "nom": "Git", "domaine": "outils", "niveau": null },
+    { "skill_slug": "confluence", "nom": "Confluence", "domaine": "outils", "niveau": null }
+  ]
+}
