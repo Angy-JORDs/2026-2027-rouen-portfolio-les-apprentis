@@ -1,0 +1,87 @@
+[
+  {
+    "projet_slug": "data-spark-velos-libre-service",
+    "candidat_slugs": [
+      "ange-tonlio"
+    ],
+    "titre": "Data Spark — Analyse d'un réseau de vélos en libre-service",
+    "contexte": "Projet Big Data & Machine Learning Distribué — ESIGELEC",
+    "description": "Problématique : Prédiction du sexe des cyclistes à partir de données comportementales (âge, vitesse, sportivité) sur un réseau de vélos en libre-service. Méthodologie : Conception d'un Modèle Conceptuel de Données (MCD), traitement distribué et nettoyage de plus de 40 000 lignes de logs (cyclistes, stations, vélos) via PySpark (DataFrame, SparkSQL, UDF), puis entraînement et optimisation d'un pipeline ML complet comparant 3 algorithmes (Logistic Regression, Decision Tree, Random Forest).",
+    "date_debut": "2025-10",
+    "date_fin": "2026-01",
+    "competences": [
+      "pyspark",
+      "spark",
+      "python",
+      "pandas",
+      "machine-learning",
+      "matplotlib",
+      "data-modeling"
+    ],
+    "metriques": {
+      "volume_donnees": "+40 000 lignes",
+      "accuracy": "0.90 (90%)",
+      "f1_score": "0.90",
+      "modeles_compares": 3
+    },
+    "liens": {
+      "github": "https://github.com/Angy-JORDS"
+    },
+    "images": []
+  },
+  {
+    "projet_slug": "modele-pricing-billets-avion",
+    "candidat_slugs": [
+      "ange-tonlio"
+    ],
+    "titre": "Modèle Prédictif de Pricing de Billets d'Avion",
+    "contexte": "Projet Data Science & Modélisation Statistique",
+    "description": "Problématique : Modéliser et anticiper les fluctuations tarifaires des billets d'avion en fonction des variables de vol. Méthodologie : Extraction et nettoyage des données, analyse exploratoire approfondie (EDA univariée et bivariée, tests statistiques, modélisation graphique), suivie du développement, de l'évaluation et de l'optimisation de modèles de Machine Learning linéaires, non linéaires et non supervisés.",
+    "date_debut": "2025-03",
+    "date_fin": "2025-06",
+    "competences": [
+      "python",
+      "pandas",
+      "scikit-learn",
+      "machine-learning",
+      "matplotlib",
+      "git"
+    ],
+    "metriques": {
+      "r2_score": "0.70",
+      "mae": "2263",
+      "approches": "Linéaire, Non-linéaire & Clustering"
+    },
+    "liens": {
+      "github": "https://github.com/Angy-JORDS"
+    },
+    "images": []
+  },
+  {
+    "projet_slug": "rapport-croissance-economique-mondiale",
+    "candidat_slugs": [
+      "ange-tonlio"
+    ],
+    "titre": "Rapport Analytique sur la Croissance Économique Mondiale (1970–2020)",
+    "contexte": "Projet Business Intelligence & Data Storytelling",
+    "description": "Problématique : Concevoir un tableau de bord décisionnel interactif analysant l'évolution démographique et le développement économique de plus de 200 pays sur 50 ans (1970-2020). Méthodologie : Extraction via API REST, nettoyage et transformation ETL, définition des KPI stratégiques, écriture des mesures DAX complexes et création de visualisations avancées pour révéler les disparités économiques mondiales.",
+    "date_debut": "2025-01",
+    "date_fin": "2025-03",
+    "competences": [
+      "power-bi",
+      "dax",
+      "etl",
+      "data-visualisation",
+      "data-modeling"
+    ],
+    "metriques": {
+      "pays_analyses": "200+ pays",
+      "periode": "1970 – 2020 (50 ans)",
+      "source": "API REST"
+    },
+    "liens": {
+      "github": "https://github.com/Angy-JORDS"
+    },
+    "images": []
+  }
+]
