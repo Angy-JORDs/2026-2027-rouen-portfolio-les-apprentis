@@ -1,8 +1,8 @@
 {
   "candidat_slug": "joel-diangon",
   "prenom": "Joël",
-  "nom": "Diangon",
-  "titre": "Ingénieur Data · BI · IA, en alternance chez De Rijke (ESIGELEC Big Data)",
+  "nom": "DIANGON",
+  "titre": "Ingénieur Data · BI · IA",
   "bio": "Profil data analytics, business intelligence et intelligence artificielle. Élève-ingénieur à l'ESIGELEC en Big Data pour la Transformation Numérique. Ouvert à de nouveaux défis, j'aide les organisations à explorer, exploiter et valoriser leurs données pour en faire un levier de décision et de performance.",
   "liens": {
     "github": "https://github.com/JoelDIANGON",
@@ -81,7 +81,7 @@
     },
     {
       "entreprise": "Club des Vikings",
-      "poste": "Nageur (perfectionnement adulte)",
+      "poste": "Natation (perfectionnement adulte)",
       "debut": "2026-10",
       "fin": null,
       "description": "Formation de perfectionnement en natation adulte : développement de l'endurance, de la régularité et de la capacité à se surpasser à chaque séance.",

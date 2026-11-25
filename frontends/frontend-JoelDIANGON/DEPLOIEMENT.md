@@ -1,5 +1,15 @@
 # Déployer le portfolio sur Vercel (depuis ton PC)
 
+**Adresses actuelles**
+
+| Élément | Projet Vercel (équipe `joel-d2`) | Adresse |
+|---|---|---|
+| API | `portfolio-api` | https://portfolio-api-joel.vercel.app (Swagger : `/docs`, connexion aux bases : `/api/health/db`) |
+| Portfolio | `portfolio-joel` | https://portfolio-joel-five.vercel.app |
+
+Les noms de projets cités plus bas (`portfolio-joel-api`…) sont ceux du premier déploiement : le projet de l'API s'appelle
+désormais `portfolio-api`.
+
 Le site et l'API sont publiés comme **deux projets Vercel** depuis ton PC avec l'outil Vercel en ligne de
 commande. Les données viennent de **tes propres bases cloud gratuites**, indépendantes de l'équipe.
 
