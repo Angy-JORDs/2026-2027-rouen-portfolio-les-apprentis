@@ -87,9 +87,9 @@ ${formState.message}`
               <div className="flex items-center gap-3.5 p-3.5 rounded-2xl bg-slate-100/80 dark:bg-midnight-950/70">
                 <Calendar className="w-5 h-5 text-emerald-500 shrink-0" />
                 <div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Disponibilité &amp; Rythme</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Disponibilité </p>
                   <p className="text-sm font-medium text-slate-900 dark:text-white">
-                    {candidat.disponibilite} ({candidat.rythme})
+                    {candidat.disponibilite}
                   </p>
                 </div>
               </div>
@@ -175,7 +175,7 @@ ${formState.message}`
                   type="text"
                   value={formState.entreprise}
                   onChange={(e) => setFormState({ ...formState, entreprise: e.target.value })}
-                  placeholder="Ex: Thales, Capgemini, Startup IA..."
+                  placeholder="Nom de l'entreprise ou de l'organisation"
                   className="w-full px-4 py-3 rounded-xl bg-slate-100/80 dark:bg-midnight-950 border border-slate-200 dark:border-slate-800 focus:border-electric-500 focus:outline-none text-sm"
                 />
               </div>
@@ -188,6 +188,7 @@ ${formState.message}`
                   required
                   value={formState.sujet}
                   onChange={(e) => setFormState({ ...formState, sujet: e.target.value })}
+                  placeholder="Objet de votre message"
                   className="w-full px-4 py-3 rounded-xl bg-slate-100/80 dark:bg-midnight-950 border border-slate-200 dark:border-slate-800 focus:border-electric-500 focus:outline-none text-sm"
                 />
               </div>
@@ -198,7 +199,7 @@ ${formState.message}`
                 Message *
               </label>
               <textarea
-                rows={5}
+                rows={7}
                 required
                 value={formState.message}
                 onChange={(e) => setFormState({ ...formState, message: e.target.value })}
