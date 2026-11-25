@@ -1,22 +1,33 @@
 # 📜 API_ROUTES - Contrat d'interface de l'équipe
 
-> Le contrat entre le backend d'équipe et **chaque** frontend. Les exemples de réponse ci-dessous sont des sorties réelles de l'API
-> (mêmes structures que les modèles Pydantic de `backend/src/portfolio_api/models/schemas.py`).
-> Il va de pair avec `ARCHITECTURE.md` (§2 : requêtes R1 à R8, §7 : organisation du code).
+> Le contrat entre le backend d'équipe et **chaque** frontend. Les exemples de réponse ci-dessous sont **illustratifs**
+> (jeu d'exemple `alice-martin`), avec exactement les structures des modèles Pydantic de `backend/src/portfolio_api/models/schemas.py`.
+> Il va de pair avec [`ARCHITECTURE.md`](ARCHITECTURE.md) (§2 : requêtes R1 à R8, §3.4 et §4.2 : requêtes exactes, §7 : organisation du code, §8 : déploiement).
 > Après la soutenance, toute modification passe par une Pull Request relue par l'équipe.
 
-Base URL : `http://localhost:8000` · Swagger : `http://localhost:8000/docs`
+**API déployée** : https://portfolio-api-joel.vercel.app · Swagger : https://portfolio-api-joel.vercel.app/docs · ReDoc : https://portfolio-api-joel.vercel.app/redoc
+(Vercel, projet `portfolio-api` ; bases MongoDB Atlas + Neo4j Aura ; `READ_ONLY=true`, donc `DELETE` répond 403.)
+En local : `http://localhost:8000` · Swagger : `http://localhost:8000/docs`
+
+**Valeurs réelles pour tester l'API déployée** : candidat `joel-diangon` ; projets `prediction-prix-maison`, `analyse-notes-films-fandango` ; compétence `python`.
+Exemples : [`/api/candidats/joel-diangon`](https://portfolio-api-joel.vercel.app/api/candidats/joel-diangon) ·
+[`/api/candidats/joel-diangon/stats`](https://portfolio-api-joel.vercel.app/api/candidats/joel-diangon/stats) ·
+[`/api/graph/projets/prediction-prix-maison/similaires`](https://portfolio-api-joel.vercel.app/api/graph/projets/prediction-prix-maison/similaires) ·
+[`/api/competences/python/candidats`](https://portfolio-api-joel.vercel.app/api/competences/python/candidats)
 
 ## Conventions
 
 - Identifiants publics = **slugs** (`alice-martin`, `smartcity-explorer`, `mongodb`), jamais d'`ObjectId` exposé. Les slugs sont en minuscules.
 - Erreurs : `404 {"detail": "Candidat non trouvé"}` (ou `"Projet non trouvé"`, `"Compétence non trouvée"`) si la ressource n'existe pas ;
   `422` si un paramètre est invalide (ex. `page=0`) ;
-  `503 {"detail": "Base de données indisponible (just up ? identifiants du .env ?)"}` si MongoDB ou Neo4j ne répond pas.
+  `503 {"detail": "Base de données indisponible (just up ? identifiants du .env ?)"}` si MongoDB ou Neo4j ne répond pas ;
+  `500 {"detail": "Internal server error"}` pour toute autre erreur.
 - Pagination (listes MongoDB) : `?page=1&size=20` (`page` ≥ 1, `size` entre 1 et 100) → `{"items": [...], "total": 42, "page": 1, "size": 20}`.
 - Les routes de graphe (Neo4j) ne sont pas paginées ; R4 accepte `?limit=`.
 - Les valeurs absentes sont `null` (ou `[]` / `{}` pour les listes et objets). Les dates sont au format `AAAA-MM`.
-- CORS : les URLs des frontends doivent figurer dans `CORS_ORIGINS` du fichier `.env`.
+- CORS : les URLs des frontends doivent figurer dans `CORS_ORIGINS` (en local : fichier `.env` ; API déployée : Vercel → projet
+  `portfolio-api` → Settings → Environment Variables, valeur actuelle `https://portfolio-joel-five.vercel.app`). Ajouter l'URL de
+  chaque portfolio déployé (séparées par des virgules), puis redéployer l'API.
 
 | # | Route | Base(s) | Service |
 |---|---|---|---|
@@ -28,6 +39,29 @@ Base URL : `http://localhost:8000` · Swagger : `http://localhost:8000/docs`
 | R6 | `GET /api/competences/{slug}/candidats` | Neo4j | `GraphService` |
 | R7 | `GET /api/competences/{slug}/projets` | Neo4j + MongoDB | `GraphService` |
 | R8 | `GET /api/projets/{slug}` | MongoDB | `ProjetService` |
+
+## Vérifier la connexion aux bases : routes et requêtes exécutées
+
+1. Connexion : https://portfolio-api-joel.vercel.app/api/health/db → `{"status": "ok", "mongo": "ok", "neo4j": "ok"}`
+   (MongoDB : commande `ping` ; Neo4j : `verify_connectivity()`, qui vérifie aussi l'authentification).
+2. Chaque route ci-dessous exécute la requête indiquée (code : `backend/src/portfolio_api/repositories/`). Elles sont testables
+   depuis Swagger (https://portfolio-api-joel.vercel.app/docs), et les requêtes sont exécutables telles quelles dans mongosh / Compass
+   ou Neo4j Browser (Cypher complet : `ARCHITECTURE.md` §4.2).
+
+| Route | Base | Requête exécutée |
+|---|---|---|
+| `GET /api/health/db` | les deux | `db.command("ping")` + `driver.verify_connectivity()` |
+| `GET /api/candidats` | MongoDB | `candidats.countDocuments({})` + `candidats.find({}).sort({nom: 1, prenom: 1}).skip((page-1)*size).limit(size)` |
+| R1 `GET /api/candidats/{slug}` | MongoDB | `candidats.findOne({candidat_slug: slug})` (timeline calculée par l'API) |
+| R2 `GET /api/candidats/{slug}/projets` | MongoDB | `projets.countDocuments(q)` + `projets.find(q).sort({titre: 1}).skip(…).limit(size)`, avec `q = {candidat_slugs: slug}` (+ `competences: competence` si `?competence=`) |
+| R3 `GET /api/candidats/{slug}/stats` | MongoDB | `projets.aggregate([{$match: {candidat_slugs: slug}}, {$unwind: "$competences"}, {$group: {_id: "$competences", nombre_projets: {$sum: 1}}}, {$sort: {nombre_projets: -1, _id: 1}}, {$project: {_id: 0, skill_slug: "$_id", nombre_projets: 1}}])` |
+| R4 `GET /api/graph/projets/{slug}/similaires` | Neo4j | `MATCH (p:Projet {projet_slug: $slug})-[:UTILISE]->(s:Competence)<-[:UTILISE]-(autre:Projet) WHERE autre.projet_slug <> $slug RETURN … count(s) AS competences_communes … ORDER BY competences_communes DESC, titre ASC LIMIT $limit` |
+| R5 `GET /api/graph/competences/{slug}` | Neo4j | `MATCH (c:Candidat {candidat_slug: $slug}) OPTIONAL MATCH (c)-[:REALISE]->(p:Projet) OPTIONAL MATCH (p)-[:UTILISE]->(s:Competence) RETURN …` |
+| R6 `GET /api/competences/{slug}/candidats` | Neo4j | `MATCH (c:Candidat)-[:REALISE]->(p:Projet)-[:UTILISE]->(:Competence {skill_slug: $slug}) RETURN … count(DISTINCT p) AS nb_projets` |
+| R7 `GET /api/competences/{slug}/projets` | Neo4j + MongoDB | `MATCH (p:Projet)-[:UTILISE]->(:Competence {skill_slug: $slug}) RETURN p.projet_slug ORDER BY p.titre`, puis `projets.find({projet_slug: {$in: slugs}})` |
+| R8 `GET /api/projets/{slug}` | MongoDB | `projets.findOne({projet_slug: slug})` |
+| `GET /api/projets` (galerie) | MongoDB | `projets.find(q).sort({titre: 1})` paginé, `q = {competences: competence}` si `?competence=` |
+| `DELETE /api/projets/{slug}` | les deux | `projets.deleteOne({projet_slug: slug})` + `MATCH (p:Projet {projet_slug: $slug}) DETACH DELETE p` (403 sur l'API déployée, `READ_ONLY=true`) |
 
 ## `GET /api/health`
 
