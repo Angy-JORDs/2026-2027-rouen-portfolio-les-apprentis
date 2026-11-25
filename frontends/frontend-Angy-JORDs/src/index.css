@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .bg-data-grid {
+    background-color: #f8fafc;
+    transition: background-color 300ms ease;
+  }
+
+  .dark .bg-data-grid {
+    background-color: #030014;
+  }
+
+  .glass-card {
+    @apply bg-white/80 dark:bg-[#050124]/75 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800/80 shadow-lg shadow-slate-900/5 dark:shadow-black/40 hover:shadow-electric-500/10 hover:border-electric-500/30 transition-all duration-300;
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-electric-500 via-cyber-violet to-cyber-cyan;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}

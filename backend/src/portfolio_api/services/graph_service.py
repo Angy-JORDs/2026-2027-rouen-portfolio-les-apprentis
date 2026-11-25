@@ -24,21 +24,38 @@ class GraphService:
         self.neo4j_repo = neo4j_repo
         self.projet_repo = projet_repo
 
-    async def get_similar_projets(self, slug: str, *, limit: int = 5) -> Optional[SimilairesOut]:
-        """R4 — projets partageant le plus de compétences avec `slug`."""
-        if await self.neo4j_repo.get_projet(slug) is None:
-            return None
-        rows = await self.neo4j_repo.get_similar_projets(slug, limit=limit)
-        similaires = [
-            {
-                "projet_slug": r["projet_slug"],
-                "titre": r["titre"],
-                "competences_communes": r["competences_communes"],
-                "competences": r["competences"],
-            }
-            for r in rows
-        ]
-        return SimilairesOut(projet_slug=slug, similaires=similaires)
+    async def get_similar_projets(self, slug: str, limit: int = 5) -> list[dict]:
+        """
+        R4 — Projets partageant des compétences avec le projet consulté,
+        appartenant exclusivement au même candidat.
+        """
+
+        query = """
+        // Retrouver le candidat propriétaire et son projet
+        MATCH (c:Candidat)-[:REALISE]->(p:Projet {projet_slug: $slug})
+
+        // Récupérer les autres projets du même candidat
+        MATCH (c)-[:REALISE]->(autre:Projet)
+
+        WHERE autre.projet_slug <> $slug
+
+        // Identifier les compétences communes
+        MATCH (p)-[:UTILISE]->(s:Competence)<-[:UTILISE]-(autre)
+
+        // Regrouper les compétences communes
+        WITH autre, collect(DISTINCT s.skill_slug) AS competences
+
+        RETURN
+            autre.projet_slug AS projet_slug,
+            autre.titre AS titre,
+            size(competences) AS competences_communes,
+            competences AS competences
+
+        ORDER BY competences_communes DESC, titre ASC
+        LIMIT $limit
+        """
+
+        return await self._run(query, slug=slug, limit=limit)
 
     async def get_candidat_graph(self, slug: str) -> Optional[GraphOut]:
         """R5 — graphe Candidat → Projets → Compétences, au format {nodes, links}."""
