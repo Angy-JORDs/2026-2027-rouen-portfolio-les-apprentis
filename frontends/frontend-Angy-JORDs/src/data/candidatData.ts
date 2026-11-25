@@ -7,7 +7,7 @@ export const CANDIDAT_DATA: CandidatProfile = {
   titre: 'Élève-Ingénieur Big Data, Data Science & IA',
   bio: "Élève ingénieur en 4e année spécialisé en Big Data pour la Transformation Numérique (BDTN) à l'ESIGELEC Rouen. Je recherche une alternance de 12 mois à partir d'octobre 2026 (rythme 1 mois / 1 mois) en Data Science ou Data Analysis afin de développer des modèles prédictifs, pipelines de données massives et solutions décisionnelles à fort impact.",
   localisation: 'Rouen, Normandie, France',
-  disponibilite: 'Octobre 2026 — Durée : 12 mois',
+  disponibilite: 'Octobre 2027',
   rythme: '1 mois en entreprise / 1 mois à l’école',
   telephone: '+33 6 27 64 27 25',
   email: 'ange.jordan.tonlio@gmail.com',
