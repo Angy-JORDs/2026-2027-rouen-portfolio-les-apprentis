@@ -4,48 +4,76 @@ import { api } from '../../api/client'
 import { CERTIFICATIONS, LANGUES, isAssociatif } from '../../content/static'
 import { useCandidat } from '../../context/CandidatContext'
 import { useAsync } from '../../hooks/useAsync'
-import { answer, questionsDisponibles } from '../../lib/qa'
+import { useLang, useT } from '../../i18n/LangContext'
+import { answer, libelleQuestion, questionsDisponibles } from '../../lib/qa'
 import { useCvViewer } from '../cv/CvViewer'
 import { ArrowLeftIcon, ArrowRightIcon, ChevronUpIcon, CloseIcon, ExternalIcon, FaqIcon } from '../icons'
 import { useCvAvailable } from '../ui/TopActions'
 
+const TEXTES = {
+  fr: {
+    ouvrir: 'Questions fréquentes sur mon profil',
+    titre: 'Questions fréquentes',
+    toutes: 'Toutes les questions',
+    fermer: 'Fermer',
+    chargement: 'Chargement du profil…',
+  },
+  en: {
+    ouvrir: 'Frequently asked questions',
+    titre: 'Frequently asked questions',
+    toutes: 'All questions',
+    fermer: 'Close',
+    chargement: 'Loading the profile…',
+  },
+}
+
 /**
- * Questions fréquentes du recruteur : il choisit une question (années d'expérience, projets en Python,
- * projets d'IA, langues…) et obtient la réponse, calculée à partir des données de l'API.
+ * Questions fréquentes du recruteur : il choisit une question (années d'expérience, Python,
+ * intelligence artificielle, langues…) et obtient la réponse, calculée à partir des données de l'API.
  * Pas de saisie libre : seules les questions auxquelles le profil permet de répondre sont proposées.
+ *
+ * Bilingue : le moteur (lib/qa.js) détecte l'intention sur la question française (sa clé) et les
+ * données françaises (candidatFr, projets bruts), puis rédige la réponse dans la langue du site.
+ * On ne garde que la clé de la question ouverte : la réponse est recalculée si la langue change.
  */
 export default function RecruiterSearch({ onNavigate }) {
-  const { candidat, skillName } = useCandidat()
+  const { candidatFr, skillName, skillNameFr } = useCandidat()
+  const { lang, L } = useLang()
+  const t = useT(TEXTES)
   const projets = useAsync('projets:', () => api.projets())
   const cvAvailable = useCvAvailable()
   const { openCv } = useCvViewer()
   const [open, setOpen] = useState(false)
-  const [result, setResult] = useState(null)
+  const [question, setQuestion] = useState(null) // clé (française) de la question affichée
   const rootRef = useRef(null)
 
   const ctx = useMemo(
     () => ({
-      candidat,
+      lang,
+      L,
+      candidat: candidatFr,
       projets: projets.data?.items || [],
-      langues: candidat?.langues || LANGUES,
-      certifications: candidat?.certifications || CERTIFICATIONS,
+      skillName: skillNameFr, // noms français : détection des compétences dans la question
+      skillLabel: skillName, // noms affichés, dans la langue du site
+      langues: candidatFr?.langues || LANGUES,
+      certifications: candidatFr?.certifications || CERTIFICATIONS,
       cvAvailable,
-      skillName,
       isAssociatif,
     }),
-    [candidat, projets.data, cvAvailable, skillName],
+    [lang, L, candidatFr, projets.data, skillName, skillNameFr, cvAvailable],
   )
 
   const faq = useMemo(() => questionsDisponibles(ctx), [ctx])
+  const result = useMemo(() => (question ? answer(question, ctx) : null), [question, ctx])
 
   const close = () => {
     setOpen(false)
-    setResult(null)
+    setQuestion(null)
   }
 
-  const ask = (question) => {
+  const ask = (cle) => {
     setOpen(true)
-    setResult({ question, ...answer(question, ctx) })
+    setQuestion(cle)
   }
 
   // Fermer avec Échap ou un clic en dehors
@@ -67,7 +95,14 @@ export default function RecruiterSearch({ onNavigate }) {
       close()
       return openCv()
     }
-    if (item.href) return window.open(item.href, '_blank', 'noopener')
+    if (item.href) {
+      // E-mail : la messagerie s'ouvre directement, sans laisser d'onglet vide
+      if (item.href.startsWith('mailto:')) {
+        window.location.href = item.href
+        return undefined
+      }
+      return window.open(item.href, '_blank', 'noopener')
+    }
     if (item.to) {
       close()
       onNavigate(item.to)
@@ -89,20 +124,20 @@ export default function RecruiterSearch({ onNavigate }) {
           >
             <div className="rs-answer-head">
               {result ? (
-                <button type="button" className="rs-back" onClick={() => setResult(null)}>
-                  <ArrowLeftIcon /> Toutes les questions
+                <button type="button" className="rs-back" onClick={() => setQuestion(null)}>
+                  <ArrowLeftIcon /> {t('toutes')}
                 </button>
               ) : (
-                <p className="rs-examples-title">Questions fréquentes</p>
+                <p className="rs-examples-title">{t('titre')}</p>
               )}
-              <button type="button" className="rs-close" aria-label="Fermer" onClick={close}>
+              <button type="button" className="rs-close" aria-label={t('fermer')} onClick={close}>
                 <CloseIcon />
               </button>
             </div>
 
             {result ? (
               <div className="rs-answer" aria-live="polite">
-                <p className="rs-question">{result.question}</p>
+                <p className="rs-question">{libelleQuestion(question, lang)}</p>
                 <h3 className="rs-title">{result.title}</h3>
                 {result.text && <p className="rs-text">{result.text}</p>}
                 {result.items?.length > 0 && (
@@ -112,7 +147,7 @@ export default function RecruiterSearch({ onNavigate }) {
                         <button type="button" className="rs-item" onClick={() => openItem(item)}>
                           <span className="rs-item-body">
                             <span className="rs-item-label">{item.label}</span>
-                            {item.sub && <span className="rs-item-sub">{item.sub}</span>}
+                            {item.sub && <span className={`rs-item-sub${item.wrap ? ' is-wrap' : ''}`}>{item.sub}</span>}
                           </span>
                           {item.href ? <ExternalIcon /> : <ArrowRightIcon />}
                         </button>
@@ -123,14 +158,14 @@ export default function RecruiterSearch({ onNavigate }) {
               </div>
             ) : (
               <div className="rs-faq">
-                {faq.length === 0 && <p className="rs-text">Chargement du profil…</p>}
+                {faq.length === 0 && <p className="rs-text">{t('chargement')}</p>}
                 {faq.map((groupe) => (
-                  <section key={groupe.theme} className="rs-theme">
+                  <section key={groupe.id} className="rs-theme">
                     <h3 className="rs-theme-title">{groupe.theme}</h3>
                     <div className="rs-chips">
                       {groupe.questions.map((q) => (
-                        <button key={q} type="button" className="rs-chip" onClick={() => ask(q)}>
-                          {q}
+                        <button key={q.key} type="button" className="rs-chip" onClick={() => ask(q.key)}>
+                          {q.label}
                         </button>
                       ))}
                     </div>
@@ -150,7 +185,7 @@ export default function RecruiterSearch({ onNavigate }) {
         onClick={() => (open ? close() : setOpen(true))}
       >
         <FaqIcon className="rs-icon" />
-        <span className="rs-trigger-label">Questions fréquentes sur mon profil</span>
+        <span className="rs-trigger-label">{t('ouvrir')}</span>
         <ChevronUpIcon className={`rs-chevron${open ? ' is-open' : ''}`} />
       </button>
     </div>

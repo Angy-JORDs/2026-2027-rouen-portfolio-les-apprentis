@@ -1,12 +1,13 @@
-# Frontend de @JoelDIANGON — « Mon parcours »
+# Frontend de @JoelDIANGON : « Mon parcours » / « My journey »
 
-Portfolio personnel immersif : un jeune garçon, vu de dos, fait face aux éléments flottants de son parcours
-(formation, expériences, compétences, projets, engagement associatif, langues, contact).
+Portfolio personnel immersif, **en français et en anglais**. Un jeune homme, vu de dos au bout d'une salle de serveurs,
+fait face aux éléments de son parcours (formation, expériences, compétences, projets, associatif, langues, contact).
 Chaque élément s'ouvre au clic. Toutes les données viennent de l'**API d'équipe**.
 
-- **Technologie** : React 19 + Vite 8, Framer Motion (animations et transitions), d3-force (mise en page du
-  graphe de compétences), scène en SVG et CSS (pas de 3D : plus léger et plus net).
-- **Lancer** : voir ci-dessous (Node.js ≥ 20.19 requis).
+- **En ligne** : https://portfolio-joel-five.vercel.app (version anglaise directe : https://portfolio-joel-five.vercel.app/?lang=en)
+- **API utilisée en ligne** : https://portfolio-api-joel.vercel.app (Swagger : `/docs`)
+- **Technologie** : React 19 + Vite 8, Framer Motion (animations), d3-force (graphe de compétences), React Icons,
+  scène en CSS et SVG.
 - **Routes de `API_ROUTES.md` consommées** : R1, R2, R3, R4, R5, R8 (détail par écran ci-dessous).
 
 ## Lancer
@@ -14,12 +15,12 @@ Chaque élément s'ouvre au clic. Toutes les données viennent de l'**API d'équ
 1. **L'API d'équipe**, à la racine du dépôt :
 
    ```bash
-   just up      # MongoDB + Neo4j
+   just up      # MongoDB + Neo4j (Docker)
    just seed    # charge data/
    just dev     # API sur http://localhost:8000
    ```
 
-2. **Ce frontend**, dans un second terminal :
+2. **Ce frontend**, dans un second terminal (Node.js ≥ 20.19) :
 
    ```bash
    cd frontends/frontend-JoelDIANGON
@@ -27,55 +28,46 @@ Chaque élément s'ouvre au clic. Toutes les données viennent de l'**API d'équ
    npm run dev          # http://localhost:5173
    ```
 
-   Version de production : `npm run build` puis `npm run preview` (même adresse).
+   Version de production : `npm run build` puis `npm run preview`.
 
 Le port **5173** est déjà autorisé dans `CORS_ORIGINS` de l'API (`.env.example` à la racine).
-Pour viser une autre API ou un autre candidat, copier `.env.example` en `.env` dans ce dossier et modifier
-`VITE_API_URL` / `VITE_CANDIDAT_SLUG`.
-
-**Crédits** : image de fond « salle de serveurs » de Vlad_Aivazovsky sur Pixabay
-(https://pixabay.com/illustrations/computer-server-room-pc-technology-8281618/), Pixabay Content License (usage libre).
-
-**Mise en ligne** : le site et l'API se déploient sur Vercel depuis ton PC, avec tes propres bases cloud —
-voir **[DEPLOIEMENT.md](./DEPLOIEMENT.md)**.
+Pour viser une autre API, copier `.env.example` en `.env` dans ce dossier et modifier `VITE_API_URL`.
+Mise en ligne (Vercel) : voir **[DEPLOIEMENT.md](./DEPLOIEMENT.md)**.
 
 ## Écrans et routes consommées
 
 | Écran (URL) | Ce qui est affiché | Route(s) de `API_ROUTES.md` | Base |
 |---|---|---|---|
-| Scène d'accueil (`#/`) | Nom, titre, 7 éléments du parcours | R1 `GET /api/candidats/{slug}` | MongoDB |
-| Mon parcours (`#/parcours`) | Profil + chronologie complète | R1 (champ `timeline`) | MongoDB |
-| Formation (`#/formation`) | Diplômes (+ certifications*) | R1 (`formations`) | MongoDB |
-| Expériences (`#/experiences`) | Expériences professionnelles | R1 (`experiences`) | MongoDB |
-| Associatif (`#/associatif`) | Engagement associatif | R1 (`experiences`) | MongoDB |
+| Scène d'accueil (`#/`) | Nom, titre, e-mail, 7 éléments du parcours, questions fréquentes | R1 `GET /api/candidats/{slug}` (+ R2 pour la FAQ) | MongoDB |
+| Parcours complet (`#/portfolio`) | Version classique qui défile : portrait, profil, expériences, formation, projets, compétences, engagement, langues, contact | R1 + R2 | MongoDB |
+| Formation (`#/formation`) | Diplômes et certifications* | R1 (`formations`) | MongoDB |
+| Expériences (`#/experiences`) | Expériences professionnelles et chiffres clés | R1 (`experiences`) | MongoDB |
+| Associatif (`#/associatif`) | Engagement associatif et sportif | R1 (`experiences`) | MongoDB |
 | Projets (`#/projets`, `#/projets?competence=python`) | Galerie filtrable par compétence | R2 `GET /api/candidats/{slug}/projets?competence=` | MongoDB |
-| Fiche projet (`#/projets/{slug}`) | Description, métriques, compétences, lien GitHub | R8 `GET /api/projets/{slug}` | MongoDB |
-| Fiche projet — similaires | Projets partageant des compétences | R4 `GET /api/graph/projets/{slug}/similaires` | Neo4j |
+| Fiche projet (`#/projets/{slug}`) | Description, indicateurs, compétences, lien GitHub | R8 `GET /api/projets/{slug}` | MongoDB |
+| Fiche projet, similaires | Mes autres projets partageant des compétences | R4 `GET /api/graph/projets/{slug}/similaires` | Neo4j |
 | Compétences (`#/competences`) | Graphe interactif candidat → projets → compétences | R5 `GET /api/graph/competences/{slug}` | Neo4j |
-| Compétences — classement | Compétences les plus mobilisées | R3 `GET /api/candidats/{slug}/stats` (agrégation) | MongoDB |
-| Langues (`#/langues`), Contact (`#/contact`) | Langues*, liens GitHub et LinkedIn | R1 (`liens`) | MongoDB |
+| Compétences, classement | Compétences les plus mobilisées | R3 `GET /api/candidats/{slug}/stats` (agrégation) | MongoDB |
+| Langues (`#/langues`), Contact (`#/contact`) | Langues*, e-mail, LinkedIn, GitHub, CV | R1 (`liens`) | MongoDB |
 
-Chaque écran indique discrètement sa source (route et base), utile en démonstration.
+**Portfolio personnel** : seul le candidat `joel-diangon` est affiché. Les routes qui listent d'autres candidats
+(`GET /api/candidats`, R6) ne sont pas utilisées, et R4 ne renvoie que les projets du même candidat.
 
-**Portfolio personnel** : seul le candidat `joel-diangon` est affiché. Les routes qui listent d'autres
-candidats (`GET /api/candidats`, R6) ne sont pas utilisées, et les projets similaires (R4) sont limités à
-mes propres projets.
+\* Les **langues** et **certifications** sont dans `data/candidats/JoelDIANGON.json`, mais le modèle `CandidatOut` de
+l'API ne les renvoie pas encore : elles sont lues depuis `src/content/static.js`.
 
-\* Les **langues** et **certifications** sont dans `data/candidats/JoelDIANGON.json`, mais le modèle
-`CandidatOut` de l'API ne les renvoie pas encore : elles sont lues depuis `src/content/static.js`. Le code
-lit d'abord l'API (`candidat.langues`, `candidat.certifications`) : si l'équipe ajoute ces champs au
-contrat, il n'y a rien à recoder.
+## Fonctionnalités
 
-## Interactions
-
-- **Survol** d'un élément : halo, nom de la section, fil lumineux depuis le garçon, qui tourne la tête vers lui.
-- **Clic** : la scène plonge vers l'élément et le panneau de la section s'ouvre.
-- **Retour** : bouton « Retour à la scène », croix, clic hors du panneau, touche Échap ou bouton Retour du navigateur.
-- **Navigation alternative** : liste discrète en haut à droite (menu sur tablette et mobile).
-- **Graphe** : survol d'un nœud = ses liens s'éclairent ; clic sur une compétence = projets filtrés ;
-  clic sur un projet = sa fiche.
-- **Accessibilité** : navigation au clavier, `prefers-reduced-motion` respecté.
-- **Responsive** : ordinateur (scène en arc), tablette, mobile (scène simplifiée en grille, panneaux plein écran).
+- **Français / anglais** : bouton FR | EN en haut à droite (choix mémorisé ; `?lang=en` dans l'adresse ouvre
+  directement la version anglaise). Les textes d'interface sont dans chaque composant ; les traductions des données
+  (profil, expériences, projets…) sont dans `src/i18n/content.js`, à mettre à jour si le français change dans `data/`.
+- **Questions fréquentes** : environ 30 questions de recruteur par thème (expérience, compétences, projets, contact…),
+  réponses calculées à partir des données de l'API (`src/lib/qa.js`), sans saisie libre.
+- **CV** : lecteur intégré avec téléchargement, dès que `public/cv-joel-diangon.pdf` existe.
+- **Version texte pour les robots** (ChatGPT, LinkedIn, moteurs de recherche) : au build, `seo-prerender.js` écrit tout
+  le portfolio en HTML (français + anglais) dans la page, avec une fiche schema.org et une image d'aperçu.
+- **Accessibilité et responsive** : navigation au clavier, `prefers-reduced-motion` respecté, ordinateur, tablette
+  et mobile.
 
 ## Structure
 
@@ -83,19 +75,19 @@ contrat, il n'y a rien à recoder.
 src/
 ├── api/client.js            # une fonction par route de API_ROUTES.md
 ├── config.js                # VITE_API_URL, VITE_CANDIDAT_SLUG
-├── context/CandidatContext  # profil (R1) chargé une fois, partagé
+├── context/CandidatContext  # profil (R1) chargé une fois, servi dans la langue choisie
+├── i18n/                    # langue du site (LangContext) et traductions des données (content.js)
 ├── hooks/                   # useAsync (cache), useHashRoute (URL), useMediaQuery
-├── content/
-│   ├── sections.js          # les 7 éléments de la scène (position, icône, libellé)
-│   └── static.js            # langues, certifications, classement associatif
-├── components/
-│   ├── scene/               # Scene, Boy (SVG), Backdrop (décor, arc du parcours), SceneObject
-│   ├── ui/                  # Panel, Nav, Tags, États (chargement, erreur, source)
-│   ├── Timeline.jsx
-│   └── icons.jsx
-├── sections/                # une section par élément + ProjetDetail + SkillGraph
-└── styles/                  # global, scene, panel, sections
+├── content/                 # sections de la scène, langues/certifications, classement associatif
+├── components/              # scène, navigation, panneaux, FAQ, lecteur de CV, icônes
+├── sections/                # un panneau par section + ProjetDetail + SkillGraph
+├── pages/ClassicPortfolio   # version classique qui défile (#/portfolio)
+└── styles/
 ```
 
-**Ajouter une donnée** (projet, expérience, compétence) : modifier `data/*/JoelDIANGON.json` à la racine,
-puis `just seed`. Le frontend l'affiche sans aucune modification de code.
+**Ajouter une donnée** (projet, expérience, compétence) : modifier `data/*/JoelDIANGON.json` à la racine, puis
+`just seed`, et ajouter sa traduction dans `src/i18n/content.js`.
+
+**Crédits** : image de fond « salle de serveurs » de Vlad_Aivazovsky sur Pixabay
+(https://pixabay.com/illustrations/computer-server-room-pc-technology-8281618/), Pixabay Content License (usage libre),
+retouchée (enseigne « DATA » sur le mur du fond).

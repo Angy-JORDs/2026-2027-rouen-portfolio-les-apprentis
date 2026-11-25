@@ -159,19 +159,32 @@
     border: 0;
   }
 
+  /* Deux rangées : en haut, le retour (à gauche) en face de la barre fixe [FR|EN][CV][Menu] (à droite) ;
+     en dessous, le titre de la section sur toute la largeur (la barre ne le recouvre jamais). */
   .panel-head {
     grid-template-columns: auto 1fr;
-    gap: 0.9rem;
-    padding-top: max(0.9rem, env(safe-area-inset-top));
-    padding-right: 7.2rem; /* place du bouton « Menu », fixe en haut à droite */
+    grid-template-areas:
+      'back .'
+      'title title';
+    gap: 0.7rem 0.9rem;
+    padding-top: max(clamp(1rem, 3.5vh, 1.8rem), env(safe-area-inset-top));
   }
 
   .panel-back span {
     display: none;
   }
 
+  /* même hauteur et même ligne que les boutons de la barre fixe */
   .panel-back {
-    padding: 0.5rem;
+    grid-area: back;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+  }
+
+  .panel-title-wrap {
+    grid-area: title;
   }
 
   .panel-close {

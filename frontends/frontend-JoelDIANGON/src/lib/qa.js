@@ -2,12 +2,31 @@
  * Moteur de questions-réponses du recruteur : sans IA, 100 % local, à partir des données de l'API.
  *
  * Le recruteur ne tape rien : il choisit parmi les questions de FAQ (voir questionsDisponibles).
- * answer(question, ctx) -> { title, text, items: [{ label, sub, to | ask | href | cv }], vide? }
- *   ctx = { candidat, projets, langues, certifications, cvAvailable, skillName, isAssociatif }
- * `to` est une route du site (ex. "projets/edi-de-rijke") que l'interface peut ouvrir.
+ * Bilingue : la CLÉ d'une question reste la question française (la détection repose sur des mots
+ * français), mais tout ce qui s'affiche (thèmes, libellés, réponses) est dans la langue du site.
+ *
+ *   questionsDisponibles(ctx) -> [{ id, theme, questions: [{ key, label }] }]
+ *   answer(cleFr, ctx)        -> { title, text, items: [{ label, sub, wrap?, to | ask | href | cv }], vide?, sansReponse? }
+ *   libelleQuestion(cleFr, lang) -> libellé affiché d'une question
+ *
+ *   ctx = {
+ *     lang, L,       // langue du site et traducteur des données (src/i18n/content.js)
+ *     candidat,      // profil d'origine, en français (candidatFr de CandidatContext)
+ *     projets,       // projets bruts de l'API, en français
+ *     skillName,     // nom français d'une compétence (sert à la détection)
+ *     skillLabel,    // nom affiché d'une compétence, dans la langue du site
+ *     langues, certifications, cvAvailable, isAssociatif,
+ *   }
+ *
+ * Les calculs (secteurs, sport, familles de compétences, chiffres clés) se font sur les données françaises ;
+ * chaque texte affiché passe par L (expériences, projets, périodes…) ou par les gabarits de TEXTES.
+ * `to` est une route du site (ex. "projets/prediction-prix-maison"), `ask` la clé d'une autre question,
+ * `wrap` demande d'afficher la ligne secondaire en entier (chiffres clés, descriptions).
+ * Fichier en JavaScript pur (sans React) : il peut être testé avec Node.
  */
 
-import { formatMonth, formatPeriod, humanizeKey, sortByDateDesc } from './format'
+import { localizer } from '../i18n/content.js'
+import { sortByDateDesc } from './format.js'
 
 /** minuscules, sans accents ni ponctuation */
 export function normalize(text) {
@@ -21,74 +40,464 @@ export function normalize(text) {
 
 const has = (q, re) => re.test(q)
 
-/** Familles de compétences : un mot de la question -> plusieurs compétences et mots-clés. */
+/**
+ * Début de phrase -> milieu de phrase : « Apprenti ingénieur… » -> « apprenti ingénieur… ».
+ * Inchangé pour un sigle (« MPSI », « B1 ») ou un intitulé en majuscules (« Junior Data Analyst »).
+ */
+function minuscule(texte) {
+  const s = String(texte ?? '')
+  const mots = s.split(/\s+/)
+  if (!/^\p{Lu}[\p{Ll}’'-]*$/u.test(mots[0] || '')) return s
+  const suivant = mots.slice(1).find((m) => /\p{L}/u.test(m))
+  if (suivant && !/^[^\p{L}]*\p{Ll}/u.test(suivant)) return s
+  return s.charAt(0).toLocaleLowerCase() + s.slice(1)
+}
+
+const majuscule = (texte) => {
+  const s = String(texte ?? '')
+  return s.charAt(0).toLocaleUpperCase() + s.slice(1)
+}
+
+/** Article indéfini anglais : « a Data… », « an engineering degree… », « a university… », « an hour… ». */
+function article(texte) {
+  const s = String(texte ?? '').trim()
+  if (/^(uni|use|usu|eu|one\b)/i.test(s)) return 'a'
+  if (/^(hour|honest|honour|heir)/i.test(s)) return 'an'
+  return /^[aeiou]/i.test(s) ? 'an' : 'a'
+}
+
+/**
+ * Gabarits des réponses, en français et en anglais (même principe que useT : « {var} » remplacé,
+ * ou fonction pour les pluriels). Le français suit la typographie française (espace avant « : »).
+ */
+const TEXTES = {
+  fr: {
+    // Mise en forme
+    deuxPoints: ' : ',
+    et: ' et ',
+    ans: ({ n }) => `${n} an${n > 1 ? 's' : ''}`,
+    mois: ({ n }) => `${n} mois`,
+    moinsDunMois: 'moins d’un mois',
+    chez: '{poste} chez {entreprise}',
+
+    // États
+    chargementTitre: 'Profil en cours de chargement',
+    chargementTexte: 'Réessayez dans un instant.',
+    sansReponse: 'Pas de réponse trouvée',
+
+    // Projets sur GitHub
+    githubTitre: 'Projets sur GitHub',
+    githubTexte: ({ n, total }) => {
+      if (n === total) {
+        return n > 1
+          ? `Ses ${n} projets personnels ont leur code en ligne sur GitHub :`
+          : 'Son projet personnel a son code en ligne sur GitHub :'
+      }
+      return n > 1
+        ? `${n} projets personnels sur ${total} ont leur code en ligne sur GitHub :`
+        : `1 projet personnel sur ${total} a son code en ligne sur GitHub :`
+    },
+    githubProfil: 'Son profil GitHub',
+
+    // E-mail et contact
+    emailTitre: 'Son adresse e-mail',
+    emailEcrire: 'Lui écrire un e-mail',
+    emailEcrireSub: 'Ouvre votre messagerie',
+    email: 'E-mail',
+    contactTitre: 'Comment le contacter',
+    contactEmailLinkedin: 'Par e-mail ({email}) ou par message sur LinkedIn.',
+    contactEmail: 'Par e-mail : {email}.',
+    contactLinkedin: 'Le plus simple : un message sur LinkedIn.',
+    contactAucun: 'Ses coordonnées ne sont pas encore en ligne.',
+
+    // CV
+    cvTitre: 'Son CV',
+    cvTexte: 'Le CV est disponible en PDF.',
+    voirCv: 'Voir le CV',
+    cvSub: 'PDF, avec option de téléchargement',
+    cvCoordonnees: 'Coordonnées complètes dans le CV (PDF)',
+    cvAbsent: 'Le CV n’est pas encore en ligne : contactez-le par e-mail ou via LinkedIn.',
+
+    // Sport
+    sportTitre: ({ sports }) => (sports ? `Sport : ${sports}` : 'Sport'),
+    sportDepuis: '{organisation}, depuis {date}.',
+    sportPeriode: '{organisation}, {periode}.',
+    sportAucun: 'Aucun sport renseigné.',
+
+    // Langues
+    languesTitre: 'Langues',
+    autresLangues: ({ n, liste }) => `${n > 1 ? 'Autres langues' : 'Autre langue'} : ${liste}.`,
+    languesDetail: 'Voir le détail des langues',
+
+    // Certifications
+    certifsTitre: 'Certifications',
+    certifsTexte: ({ n, detail }) => `${n} certifications${detail ? ` : ${detail}` : ''}.`,
+    certifUnique: ({ libelle }) => (libelle ? `1 certification (${libelle}).` : '1 certification.'),
+    certifStatut: ({ n, statut, libelle }) => `${n} ${statut === 'obtenue' && n > 1 ? 'obtenues' : libelle}`,
+
+    // Atouts
+    atoutsTitre: 'Ses atouts',
+    atoutsExpData: '{duree} d’expérience professionnelle en data.',
+    atoutsExpDont: '{duree} d’expérience professionnelle, dont {dureeData} en data.',
+    atoutsExp: '{duree} d’expérience professionnelle.',
+    atoutsActuel: ({ poste, entreprise }) => `Actuellement ${minuscule(poste)} chez ${entreprise}.`,
+    atoutsProjets: ({ n, m }) => {
+      const base = `${n} projet${n > 1 ? 's' : ''} personnel${n > 1 ? 's' : ''}`
+      if (!m) return `${base}.`
+      return n > 1 ? `${base}, dont ${m} aux résultats chiffrés.` : `${base}, aux résultats chiffrés.`
+    },
+    atoutsPointsForts: 'Points forts : {liste}.',
+    voirResultats: 'Voir ses résultats concrets',
+    voirProjets: 'Voir ses projets personnels',
+
+    // Résultats chiffrés
+    resultatsTitre: 'Résultats concrets',
+    resultatsTous: 'Des résultats mesurés, en entreprise comme en projet :',
+    resultatsEntreprise: 'Des résultats mesurés en entreprise :',
+    resultatsProjets: 'Des résultats mesurés en projet :',
+
+    // Secteurs
+    secteursTitre: 'Secteurs d’activité',
+    secteursTexte: ({ n, liste }) => `${n} secteur${n > 1 ? 's' : ''} : ${liste}.`,
+
+    // Formation
+    formationTitre: 'Formation',
+    formationQuandTitre: 'Diplôme prévu en {date}',
+    formationEnCours: ({ diplome, ecole, date }) => `En cours : ${minuscule(diplome)} (${ecole}), fin prévue en ${date}.`,
+    formationDerniere: ({ n, diplome, ecole }) =>
+      n > 1 ? `${n} formations, la plus récente : ${minuscule(diplome)} (${ecole}).` : `${majuscule(diplome)} (${ecole}).`,
+
+    // Associatif
+    assoTitre: 'Engagement associatif',
+    assoTexte: ({ n, noms }) => `${n} engagement${n > 1 ? 's' : ''} associatif${n > 1 ? 's' : ''} : ${noms}.`,
+    assoAucun: 'Aucun engagement associatif renseigné.',
+
+    // Années d'expérience
+    expTitre: 'Expérience professionnelle',
+    expData: ({ duree, n, types }) =>
+      `${duree} d’expérience professionnelle cumulée en data, sur ${n} expérience${n > 1 ? 's' : ''} (${types}).`,
+    expDont: ({ duree, n, types, dureeData }) =>
+      `${duree} d’expérience professionnelle cumulée sur ${n} expérience${n > 1 ? 's' : ''} (${types}), dont ${dureeData} en data.`,
+    expSimple: ({ duree, n, types }) =>
+      `${duree} d’expérience professionnelle cumulée sur ${n} expérience${n > 1 ? 's' : ''} (${types}).`,
+    alternances: ({ n }) => `${n} alternance${n > 1 ? 's' : ''}`,
+    stages: ({ n }) => `${n} stage${n > 1 ? 's' : ''}`,
+    autresPostes: ({ n }) => `${n} autre${n > 1 ? 's' : ''} poste${n > 1 ? 's' : ''}`,
+
+    // Situation actuelle / disponibilité
+    actuelTitre: 'Situation actuelle',
+    dispoTitre: 'Disponibilité',
+    actuelRole: ({ poste, entreprise, date }) => `${minuscule(poste)} chez ${entreprise} (depuis ${date})`,
+    actuelTexte: 'En ce moment : {roles}.',
+    actuelFormation: ({ diplome, ecole, date }) =>
+      `En parallèle : ${minuscule(diplome)} (${ecole})${date ? `, fin prévue en ${date}` : ''}.`,
+    actuelFormationSeule: ({ diplome, ecole, date }) =>
+      `En formation : ${minuscule(diplome)} (${ecole})${date ? `, fin prévue en ${date}` : ''}.`,
+    actuelContactEmail: 'Pour une opportunité, contactez-le par e-mail ({email}) ou via LinkedIn.',
+    actuelContactLinkedin: 'Pour une opportunité, contactez-le via LinkedIn.',
+
+    // Compétences
+    competencesListe: 'Compétences : {liste}.',
+    pratique: 'Mise en pratique : {liste}.',
+    pratiqueEntreprise: '{duree} en entreprise ({entreprises})',
+    pratiqueProjets: ({ n }) => `${n} projet${n > 1 ? 's' : ''} personnel${n > 1 ? 's' : ''}`,
+    pratiqueAsso: ({ n, noms }) => `${n} activité${n > 1 ? 's' : ''} associative${n > 1 ? 's' : ''} (${noms})`,
+    voirCompetences: 'Voir toutes ses compétences',
+    competencesTitre: 'Compétences principales',
+    competencesTexte: ({ n }) => `${n} compétence${n > 1 ? 's' : ''} déclarée${n > 1 ? 's' : ''}. Les plus maîtrisées :`,
+
+    // Entreprises
+    entreprisesTitre: 'Entreprises',
+    entreprisesTexte: ({ n, noms }) => `${n} entreprise${n > 1 ? 's' : ''} : ${noms}.`,
+
+    // Projets
+    projetRecentTitre: 'Son projet le plus récent',
+    projetsTitre: 'Projets personnels',
+    projetsTexte: ({ n }) => (n > 1 ? `${n} projets personnels, du plus récent au plus ancien :` : `${n} projet personnel :`),
+
+    // Profil
+    voirParcours: 'Voir son parcours complet',
+    voirParcoursSub: 'Expériences, formation, projets et compétences sur une seule page',
+
+    // Recherche plein texte (repli)
+    rechercheTitre: 'Résultats',
+    rechercheTexte: ({ n }) => `${n} élément${n > 1 ? 's' : ''} correspond${n > 1 ? 'ent' : ''} à votre recherche.`,
+  },
+
+  en: {
+    deuxPoints: ': ',
+    et: ' and ',
+    ans: ({ n }) => `${n} year${n === 1 ? '' : 's'}`,
+    mois: ({ n }) => `${n} month${n === 1 ? '' : 's'}`,
+    moinsDunMois: 'less than a month',
+    chez: '{poste} at {entreprise}',
+
+    chargementTitre: 'Loading the profile',
+    chargementTexte: 'Please try again in a moment.',
+    sansReponse: 'No answer found',
+
+    githubTitre: 'Projects on GitHub',
+    githubTexte: ({ n, total }) => {
+      if (n === total) {
+        return n > 1
+          ? `All ${n} of his personal projects have their code on GitHub:`
+          : 'His personal project has its code on GitHub:'
+      }
+      return `${n} of his ${total} personal projects ${n > 1 ? 'have their' : 'has its'} code on GitHub:`
+    },
+    githubProfil: 'His GitHub profile',
+
+    emailTitre: 'His email address',
+    emailEcrire: 'Email him',
+    emailEcrireSub: 'Opens your email app',
+    email: 'Email',
+    contactTitre: 'How to contact him',
+    contactEmailLinkedin: 'By email ({email}) or via a LinkedIn message.',
+    contactEmail: 'By email: {email}.',
+    contactLinkedin: 'The easiest way is a LinkedIn message.',
+    contactAucun: 'His contact details are not online yet.',
+
+    cvTitre: 'His CV',
+    cvTexte: 'His CV is available as a PDF.',
+    voirCv: 'View his CV',
+    cvSub: 'PDF, with a download option',
+    cvCoordonnees: 'Full contact details in the CV (PDF)',
+    cvAbsent: 'His CV is not online yet: contact him by email or via LinkedIn.',
+
+    sportTitre: ({ sports }) => (sports ? `Sport: ${sports}` : 'Sport'),
+    sportDepuis: '{organisation}, since {date}.',
+    sportPeriode: '{organisation}, {periode}.',
+    sportAucun: 'No sport listed.',
+
+    languesTitre: 'Languages',
+    autresLangues: ({ n, liste }) => `${n > 1 ? 'Other languages' : 'Other language'}: ${liste}.`,
+    languesDetail: 'See language details',
+
+    certifsTitre: 'Certifications',
+    certifsTexte: ({ n, detail }) => `${n} certifications${detail ? `: ${detail}` : ''}.`,
+    certifUnique: ({ libelle }) => (libelle ? `1 certification (${libelle}).` : '1 certification.'),
+    certifStatut: ({ n, libelle }) => `${n} ${libelle}`,
+
+    atoutsTitre: 'His strengths',
+    atoutsExpData: '{duree} of professional experience in data.',
+    atoutsExpDont: '{duree} of professional experience, including {dureeData} in data.',
+    atoutsExp: '{duree} of professional experience.',
+    atoutsActuel: ({ poste, entreprise }) => `Currently ${article(poste)} ${poste} at ${entreprise}.`,
+    atoutsProjets: ({ n, m }) => {
+      const base = `${n} personal project${n === 1 ? '' : 's'}`
+      if (!m) return `${base}.`
+      return n === 1 ? `${base}, with measurable results.` : `${base}, ${m} of them with measurable results.`
+    },
+    atoutsPointsForts: 'Strongest skills: {liste}.',
+    voirResultats: 'See his concrete results',
+    voirProjets: 'See his personal projects',
+
+    resultatsTitre: 'Concrete results',
+    resultatsTous: 'Measurable results, at work and in personal projects:',
+    resultatsEntreprise: 'Measurable results at work:',
+    resultatsProjets: 'Measurable results in personal projects:',
+
+    secteursTitre: 'Sectors',
+    secteursTexte: ({ n, liste }) => `${n} sector${n === 1 ? '' : 's'}: ${liste}.`,
+
+    formationTitre: 'Education',
+    formationQuandTitre: 'Expected to graduate in {date}',
+    formationEnCours: ({ diplome, ecole, date }) =>
+      `Currently studying for ${article(diplome)} ${minuscule(diplome)} at ${ecole}, due to finish in ${date}.`,
+    formationDerniere: ({ n, diplome, ecole }) =>
+      n > 1 ? `Most recent of ${n} programmes: ${diplome} (${ecole}).` : `${diplome} (${ecole}).`,
+
+    assoTitre: 'Community involvement',
+    assoTexte: ({ n, noms }) => `Involved in ${n === 1 ? 'one organisation' : `${n} associations and clubs`}: ${noms}.`,
+    assoAucun: 'No community involvement listed.',
+
+    expTitre: 'Professional experience',
+    expData: ({ duree, n, types }) =>
+      `${duree} of combined professional experience in data, across ${n} role${n === 1 ? '' : 's'} (${types}).`,
+    expDont: ({ duree, n, types, dureeData }) =>
+      `${duree} of combined professional experience across ${n} role${n === 1 ? '' : 's'} (${types}), including ${dureeData} in data.`,
+    expSimple: ({ duree, n, types }) =>
+      `${duree} of combined professional experience across ${n} role${n === 1 ? '' : 's'} (${types}).`,
+    alternances: ({ n }) => `${n} apprenticeship${n === 1 ? '' : 's'}`,
+    stages: ({ n }) => `${n} internship${n === 1 ? '' : 's'}`,
+    autresPostes: ({ n }) => `${n} other role${n === 1 ? '' : 's'}`,
+
+    actuelTitre: 'Current position',
+    dispoTitre: 'Availability',
+    actuelRole: ({ poste, entreprise, date }) => `${article(poste)} ${poste} at ${entreprise} (since ${date})`,
+    actuelTexte: 'He is currently {roles}.',
+    actuelFormation: ({ diplome, ecole, date }) =>
+      `Alongside this, he is studying for ${article(diplome)} ${minuscule(diplome)} at ${ecole}${date ? `, due to finish in ${date}` : ''}.`,
+    actuelFormationSeule: ({ diplome, ecole, date }) =>
+      `He is studying for ${article(diplome)} ${minuscule(diplome)} at ${ecole}${date ? `, due to finish in ${date}` : ''}.`,
+    actuelContactEmail: 'To discuss an opportunity, contact him by email ({email}) or via LinkedIn.',
+    actuelContactLinkedin: 'To discuss an opportunity, contact him via LinkedIn.',
+
+    competencesListe: 'Skills: {liste}.',
+    pratique: 'In practice: {liste}.',
+    pratiqueEntreprise: '{duree} of professional experience ({entreprises})',
+    pratiqueProjets: ({ n }) => `${n} personal project${n === 1 ? '' : 's'}`,
+    pratiqueAsso: ({ n, noms }) => `${n} extracurricular activit${n === 1 ? 'y' : 'ies'} (${noms})`,
+    voirCompetences: 'See all his skills',
+    competencesTitre: 'Main skills',
+    competencesTexte: ({ n }) => `${n} skill${n === 1 ? '' : 's'} on his profile. His strongest:`,
+
+    entreprisesTitre: 'Companies',
+    entreprisesTexte: ({ n, noms }) => `${n} compan${n === 1 ? 'y' : 'ies'}: ${noms}.`,
+
+    projetRecentTitre: 'His most recent project',
+    projetsTitre: 'Personal projects',
+    projetsTexte: ({ n }) => (n === 1 ? '1 personal project:' : `${n} personal projects, most recent first:`),
+
+    voirParcours: 'See his full profile',
+    voirParcoursSub: 'Experience, education, projects and skills on a single page',
+
+    rechercheTitre: 'Results',
+    rechercheTexte: ({ n }) => `${n} item${n === 1 ? '' : 's'} match${n === 1 ? 'es' : ''} your search.`,
+  },
+}
+
+/** Équivalent de useT pour ce module sans React : t('cle', { n: 3 }). */
+function traducteur(lang) {
+  const dico = TEXTES[lang] || TEXTES.fr
+  return (cle, vars) => {
+    const v = dico[cle] ?? TEXTES.fr[cle] ?? cle
+    if (typeof v === 'function') return v(vars ?? {})
+    if (!vars) return v
+    return String(v).replace(/\{(\w+)\}/g, (_, k) => (vars[k] ?? `{${k}}`))
+  }
+}
+
+/**
+ * Familles de compétences : un mot de la question -> plusieurs compétences.
+ * `titre` : intitulé affiché de la réponse.
+ */
 const FAMILLES = [
   {
-    label: 'l’intelligence artificielle',
+    titre: { fr: 'Intelligence artificielle', en: 'Artificial intelligence' },
     re: / (ia|ai|intelligence artificielle|machine learning|ml|apprentissage automatique|deep learning|modeles? predictifs?|prediction|scoring) /,
     skills: ['machine-learning', 'scikit-learn', 'tensorflow', 'pytorch'],
   },
   {
-    label: 'la BI / data visualisation',
+    titre: { fr: 'BI et data visualisation', en: 'BI & data visualisation' },
     re: / (bi|business intelligence|dashboards?|tableaux? de bord|dataviz|data visualisation|visualisation|reporting) /,
     skills: ['power-bi', 'dax', 'power-query', 'tableau', 'matplotlib', 'seaborn'],
   },
   {
-    label: 'les bases de données',
+    titre: { fr: 'Bases de données', en: 'Databases' },
     re: / (bdd|bases? de donnees|database|nosql) /,
     skills: ['sql', 'mysql', 'mongodb', 'neo4j'],
   },
   {
-    label: 'l’intégration de données (ETL)',
+    titre: { fr: 'Intégration de données (ETL)', en: 'Data integration (ETL)' },
     re: / (etl|pipelines?|integration de donnees|data engineering|flux de donnees|edi) /,
     skills: ['etl', 'ssis', 'microsoft-fabric', 'edi', 'data-catalog'],
   },
   {
-    label: 'le développement web',
+    titre: { fr: 'Développement web', en: 'Web development' },
     re: / (web|site|front|frontend|backend) /,
     skills: ['php', 'html', 'css', 'javascript', 'fastapi'],
   },
   {
-    label: 'la gestion de projet et les méthodes agiles',
+    titre: { fr: 'Gestion de projet et méthodes agiles', en: 'Project management & agile methods' },
     re: / (gestion de projet|agiles?|scrum|methodes? de travail|methodologies?) /,
     skills: ['agile-scrum', 'uml', 'trello', 'teams'],
   },
 ]
 
-/** Secteurs d'activité, déduits du nom de l'entreprise et de la description de l'expérience. */
+/** Secteurs d'activité, déduits du nom de l'entreprise et de la description de l'expérience (en français). */
 // L'ordre compte : une alternance logistique qui produit aussi des tableaux de bord « finance » reste logistique.
 const SECTEURS = [
-  { label: 'Transport et logistique', re: / (logistique|transport\w*|supply chain) / },
-  { label: 'Banque et finance', re: / (banque|bank|bancaire|financ\w*) / },
-  { label: 'Tourisme et hôtellerie', re: / (residence|hotel\w*|vacances|tourisme|clientele internationale) / },
-  { label: 'Éducation', re: / (lyceens?|pedagogi\w*|enseign\w*|soutien scolaire|completude) / },
+  { fr: 'Transport et logistique', en: 'Transport & logistics', re: / (logistique|transport\w*|supply chain) / },
+  { fr: 'Banque et finance', en: 'Banking & finance', re: / (banque|bank|bancaire|financ\w*) / },
+  { fr: 'Immobilier', en: 'Real estate', re: / (immobili\w*|real estate) / },
+  { fr: 'Tourisme et hôtellerie', en: 'Tourism & hospitality', re: / (residence|hotel\w*|vacances|tourisme|clientele internationale) / },
+  { fr: 'Éducation', en: 'Education', re: / (lyceens?|pedagogi\w*|enseign\w*|soutien scolaire|completude) / },
 ]
+const AUTRE_SECTEUR = { fr: 'Autre', en: 'Other' }
 
 function secteurDe(e) {
   const texte = normalize(`${e.entreprise} ${e.poste} ${e.description}`)
-  return SECTEURS.find((s) => s.re.test(texte))?.label || 'Autre'
+  return SECTEURS.find((s) => s.re.test(texte)) || AUTRE_SECTEUR
 }
 
-const DOMAINES_LIBELLES = {
-  langages: 'Langages',
-  bi: 'Business intelligence',
-  'data-ia': 'Data & IA',
-  'data-engineering': 'Data engineering',
-  frameworks: 'Bibliothèques & frameworks',
-  'bases-de-donnees': 'Bases de données',
-  'developpement-web': 'Développement web',
-  outils: 'Outils',
-  'gestion-de-projet': 'Gestion de projet',
+/** Sports reconnus dans l'intitulé ou la description d'une expérience (données françaises, ou anglaises). */
+const SPORTS =
+  / (natation|nage|nageur|nageuse|swimming|swimmer|piscine|sports?|sportif|sportive|football|foot|basket\w*|tennis|rugby|handball|volley\w*|course a pied|running|marathon|triathlon|cyclisme|velo|judo|karate|boxe|escalade|athletisme|danse|fitness|musculation) /
+
+/** "Natation (perfectionnement adulte)" -> "natation" */
+const nomSport = (poste) => minuscule(String(poste ?? '').replace(/\s*\([^)]*\)\s*/g, ' ').trim())
+
+/** Type de contrat d'une expérience professionnelle, d'après son intitulé. */
+function typeContrat(e) {
+  const poste = normalize(e.poste)
+  if (/ (apprenti\w*|alternan\w*|apprentice\w*) /.test(poste)) return 'alternances'
+  if (/ (stage\w*|stagiaire\w*|intern|internship) /.test(poste)) return 'stages'
+  return 'autresPostes'
 }
 
+/**
+ * Entreprise citée dans la question (« chez De Rijke », « chez Afriland First Bank ») :
+ * on cherche les mots distinctifs du nom, sans les mots génériques (pays, ville, « club », « bank »…).
+ */
+const MOTS_GENERIQUES_ORGANISATION = new Set(
+  'france club first bank banque societe groupe group association rouen paris cameroun esigelec'.split(' '),
+)
+
+function experienceCitee(q, experiences) {
+  return experiences.find((e) =>
+    normalize(e.entreprise)
+      .trim()
+      .split(' ')
+      .filter((mot) => mot.length >= 4 && !MOTS_GENERIQUES_ORGANISATION.has(mot))
+      .some((mot) => q.includes(` ${mot} `)),
+  )
+}
+
+/** Phrases chiffrées d'une description (« +10 % de fidélisation… »), réduites à leurs chiffres. */
+function chiffresCles(description) {
+  const chiffre = /\d\s?%|\d\+/
+  return String(description || '')
+    .split(/(?<=\.)\s+/)
+    .filter((phrase) => chiffre.test(phrase))
+    .map((phrase) => {
+      const parties = phrase.split(/\s?:\s/)
+      const fin = parties[parties.length - 1]
+      return (chiffre.test(fin) ? fin : phrase).replace(/\.\s*$/, '').trim()
+    })
+    .join(', ')
+}
+
+/** "https://www.linkedin.com/in/jo%C3%ABl-diangon/" -> "linkedin.com/in/joël-diangon" */
+function urlLisible(url) {
+  let s = String(url || '')
+  try {
+    s = decodeURI(s)
+  } catch {
+    /* adresse mal encodée : on l'affiche telle quelle */
+  }
+  return s.replace(/^https?:\/\/(www\.)?/i, '').replace(/\/$/, '')
+}
+
+const moisCourant = () => new Date().toISOString().slice(0, 7)
+
+/** Projets du plus récent au plus ancien (date de fin, sinon de début). */
+const trierProjets = (projets) =>
+  [...projets].sort((a, b) => String(b.date_fin || b.date_debut || '').localeCompare(String(a.date_fin || a.date_debut || '')))
+
+const projetsAvecMetriques = (projets) => projets.filter((p) => p.metriques && Object.keys(p.metriques).length)
+
+const topCompetences = (candidat, n) =>
+  [...(candidat.competences || [])].sort((a, b) => (b.niveau || 0) - (a.niveau || 0)).slice(0, n)
 
 /** Compétences citées dans la question (nom ou slug), plus les familles. */
 function detectSkills(q, ctx) {
-  const found = new Map() // slug -> libellé
+  const found = new Set()
   const tous = new Set([
     ...(ctx.candidat?.competences || []).map((c) => c.skill_slug),
     ...ctx.projets.flatMap((p) => p.competences || []),
   ])
+  let reste = q // la question sans les compétences reconnues (pour chercher ensuite les familles)
   for (const slug of tous) {
     const nom = ctx.skillName(slug)
     const variantes = new Set([normalize(nom).trim(), normalize(slug.replace(/-/g, ' ')).trim(), normalize(slug).trim()])
@@ -96,18 +505,21 @@ function detectSkills(q, ctx) {
       if (!v) continue
       // Les langages d'une seule lettre (R, C) ne sont reconnus que dans « en R », « langage C »…
       if (v.length === 1) {
-        if (new RegExp(` (en|langage|le) ${v} `).test(q)) found.set(slug, nom)
+        if (new RegExp(` (en|langage|le) ${v} `).test(q)) found.add(slug)
         continue
       }
-      if (q.includes(` ${v} `)) found.set(slug, nom)
+      if (q.includes(` ${v} `)) {
+        found.add(slug)
+        reste = reste.split(` ${v} `).join('  ')
+      }
     }
   }
-  // Une technologie citée précisément (« Power BI », « machine learning ») n'est pas élargie à sa famille :
-  // les familles ne servent qu'aux questions générales (« projets d'IA », « de la BI »).
-  if (found.size) return { slugs: [...found.keys()], familles: [] }
-  const familles = FAMILLES.filter((f) => f.re.test(q))
-  for (const f of familles) for (const s of f.skills) if (tous.has(s)) found.set(s, ctx.skillName(s))
-  return { slugs: [...found.keys()], familles }
+  // Une technologie citée précisément (« Power BI », « machine learning ») n'est pas élargie à sa famille.
+  // En revanche, si le reste de la question nomme une famille (« intégration de données (ETL) »),
+  // la réponse couvre toute la famille.
+  const familles = FAMILLES.filter((f) => f.re.test(reste))
+  for (const f of familles) for (const s of f.skills) if (tous.has(s)) found.add(s)
+  return { slugs: [...found], familles }
 }
 
 /** Nombre de mois couverts par des périodes (chevauchements fusionnés). */
@@ -128,90 +540,154 @@ function moisCouverts(periodes) {
   return mois.size
 }
 
-function dureeTexte(mois) {
-  const ans = Math.floor(mois / 12)
-  const reste = mois % 12
-  const parts = []
-  if (ans) parts.push(`${ans} an${ans > 1 ? 's' : ''}`)
-  if (reste) parts.push(`${reste} mois`)
-  return parts.join(' et ') || 'moins d’un mois'
+/** Outils d'affichage dans la langue du contexte (textes, listes, durées, éléments de réponse). */
+function outils(ctx) {
+  const lang = ctx.lang === 'en' ? 'en' : 'fr'
+  const L = ctx.L || localizer(lang)
+  const t = traducteur(lang)
+  const skillName = ctx.skillName || ((slug) => slug)
+  const skillLabel = ctx.skillLabel || ((slug) => L.skill(slug, skillName(slug)))
+
+  /** ['A', 'B', 'C'] -> "A, B et C" / "A, B and C" */
+  const liste = (valeurs) => {
+    const xs = valeurs.filter(Boolean)
+    if (xs.length <= 1) return xs.join('')
+    return `${xs.slice(0, -1).join(', ')}${t('et')}${xs[xs.length - 1]}`
+  }
+
+  /** 20 -> "1 an et 8 mois" / "1 year and 8 months" */
+  const duree = (mois) => {
+    const ans = Math.floor(mois / 12)
+    const reste = mois % 12
+    const parts = []
+    if (ans) parts.push(t('ans', { n: ans }))
+    if (reste) parts.push(t('mois', { n: reste }))
+    return parts.join(t('et')) || t('moinsDunMois')
+  }
+
+  const libelleExp = (e) => {
+    const x = L.experience(e)
+    return t('chez', { poste: x.poste, entreprise: x.entreprise })
+  }
+  const expItem = (e) => ({ label: libelleExp(e), sub: L.period(e.debut, e.fin), to: 'experiences' })
+
+  /** Engagement associatif : le nom de l'organisation, puis le rôle et la période (ou la description). */
+  const assoItem = (e, { detail = false } = {}) => {
+    const x = L.experience(e)
+    return detail
+      ? { label: x.entreprise, sub: x.description, wrap: true, to: 'associatif' }
+      : { label: x.entreprise, sub: [x.poste, L.period(e.debut, e.fin)].filter(Boolean).join(' · '), to: 'associatif' }
+  }
+
+  const projetItem = (p, focus = []) => {
+    const x = L.projet(p)
+    return {
+      label: x.titre,
+      sub: [x.contexte, focus.length ? focus.map(skillLabel).join(' · ') : null].filter(Boolean).join(' · '),
+      to: `projets/${p.projet_slug}`,
+    }
+  }
+
+  return { lang, L, t, skillName, skillLabel, liste, duree, libelleExp, expItem, assoItem, projetItem }
 }
 
-const projetItem = (p, skillName, focus = []) => ({
-  label: p.titre,
-  sub: [p.contexte, focus.length ? focus.map(skillName).join(' · ') : null].filter(Boolean).join(' · '),
-  to: `projets/${p.projet_slug}`,
-})
-
-const expItem = (e, to) => ({ label: `${e.poste} chez ${e.entreprise}`, sub: formatPeriod(e.debut, e.fin), to })
-
 /**
- * Questions fréquentes proposées au recruteur, par thème. Il ne peut pas en rédiger d'autres :
- * l'interface n'affiche que celles auxquelles les données permettent de répondre (voir questionsDisponibles).
+ * Questions fréquentes proposées au recruteur, par thème : clé française (`fr`) et libellé anglais (`en`).
+ * Il ne peut pas en rédiger d'autres : l'interface n'affiche que celles auxquelles les données permettent
+ * de répondre (voir questionsDisponibles). Les « projets » sont ses projets personnels : les projets
+ * d'entreprise sont décrits dans les expériences.
  */
 export const FAQ = [
   {
-    theme: 'Profil',
+    theme: { fr: 'Profil', en: 'Profile' },
     questions: [
-      'Qui est Joël ?',
-      'Pourquoi le recruter ?',
-      'Que fait-il en ce moment ?',
-      'Est-il disponible pour un CDI ou un stage ?',
-      'Quand sera-t-il diplômé ?',
+      { fr: 'Qui est Joël ?', en: 'Who is Joël?' },
+      { fr: 'Pourquoi le recruter ?', en: 'Why hire him?' },
+      { fr: 'Que fait-il en ce moment ?', en: 'What is he doing at the moment?' },
+      { fr: 'Est-il disponible pour un CDI ou un stage ?', en: 'Is he available for a permanent job or an internship?' },
+      { fr: 'Quand sera-t-il diplômé ?', en: 'When will he graduate?' },
     ],
   },
   {
-    theme: 'Expérience',
+    theme: { fr: 'Expérience', en: 'Experience' },
     questions: [
-      'Combien d’années d’expérience a-t-il ?',
-      'Dans quelles entreprises a-t-il travaillé ?',
-      'Dans quels secteurs a-t-il travaillé ?',
-      'Quels résultats concrets a-t-il obtenus ?',
+      { fr: 'Combien d’années d’expérience a-t-il ?', en: 'How many years of experience does he have?' },
+      { fr: 'Dans quelles entreprises a-t-il travaillé ?', en: 'Which companies has he worked for?' },
+      { fr: 'Dans quels secteurs a-t-il travaillé ?', en: 'Which sectors has he worked in?' },
+      { fr: 'Quels résultats concrets a-t-il obtenus ?', en: 'What concrete results has he achieved?' },
+      { fr: 'Que fait-il chez De Rijke ?', en: 'What does he do at De Rijke?' },
+      { fr: 'Qu’a-t-il réalisé chez Afriland First Bank ?', en: 'What did he achieve at Afriland First Bank?' },
     ],
   },
   {
-    theme: 'Projets',
+    theme: { fr: 'Compétences', en: 'Skills' },
     questions: [
-      'Combien de projets a-t-il réalisés ?',
-      'Quel est son projet le plus récent ?',
-      'Projets d’intelligence artificielle',
-      'Projets Power BI',
-      'Projets en Python',
-      'Projets SQL',
-      'Expérience en intégration de données (ETL)',
-      'Compétences en développement web',
+      { fr: 'Quelles sont ses compétences principales ?', en: 'What are his main skills?' },
+      { fr: 'Expérience avec Power BI', en: 'Experience with Power BI' },
+      { fr: 'Expérience en Python', en: 'Experience with Python' },
+      { fr: 'Expérience en SQL', en: 'Experience with SQL' },
+      { fr: 'Expérience en intelligence artificielle', en: 'Experience with artificial intelligence' },
+      { fr: 'Expérience en intégration de données (ETL)', en: 'Experience with data integration (ETL)' },
+      { fr: 'Quels outils de data visualisation utilise-t-il ?', en: 'Which data visualisation tools does he use?' },
+      { fr: 'Compétences en développement web', en: 'Web development skills' },
+      { fr: 'Connaît-il les méthodes agiles ?', en: 'Is he familiar with agile methods?' },
     ],
   },
   {
-    theme: 'Compétences',
+    theme: { fr: 'Projets', en: 'Projects' },
     questions: [
-      'Quelles sont ses compétences principales ?',
-      'A-t-il de l’expérience en machine learning ?',
-      'Quels outils de data visualisation utilise-t-il ?',
-      'Connaît-il les méthodes agiles ?',
+      { fr: 'Combien de projets personnels a-t-il réalisés ?', en: 'How many personal projects has he completed?' },
+      { fr: 'Quel est son projet le plus récent ?', en: 'What is his most recent project?' },
+      { fr: 'Quels projets sont disponibles sur GitHub ?', en: 'Which projects are on GitHub?' },
     ],
   },
   {
-    theme: 'Formation et langues',
-    questions: ['Quels diplômes prépare-t-il ?', 'Quelles certifications a-t-il ?', 'Quelles langues parle-t-il ?', 'Quel est son niveau d’anglais ?'],
+    theme: { fr: 'Formation et langues', en: 'Education & languages' },
+    questions: [
+      { fr: 'Quels diplômes prépare-t-il ?', en: 'Which degree is he studying for?' },
+      { fr: 'Quelles certifications a-t-il ?', en: 'Which certifications does he hold?' },
+      { fr: 'Quelles langues parle-t-il ?', en: 'Which languages does he speak?' },
+      { fr: 'Quel est son niveau d’anglais ?', en: 'What is his level of English?' },
+    ],
   },
   {
-    theme: 'Engagement et contact',
-    questions: ['A-t-il un engagement associatif ?', 'Comment le contacter ?', 'Voir son CV'],
+    theme: { fr: 'Engagement et loisirs', en: 'Involvement & interests' },
+    questions: [
+      { fr: 'A-t-il un engagement associatif ?', en: 'Is he involved in any associations or clubs?' },
+      { fr: 'Pratique-t-il un sport ?', en: 'Does he play any sport?' },
+    ],
+  },
+  {
+    theme: { fr: 'Contact', en: 'Contact' },
+    questions: [
+      { fr: 'Comment le contacter ?', en: 'How can I contact him?' },
+      { fr: 'Quelle est son adresse e-mail ?', en: 'What is his email address?' },
+      { fr: 'Voir son CV', en: 'View his CV' },
+    ],
   },
 ]
 
-const SANS_REPONSE = 'Pas de réponse trouvée'
+const LIBELLES = new Map(FAQ.flatMap((g) => g.questions.map((q) => [q.fr, q])))
+
+/** Libellé affiché d'une question (clé française -> langue du site ; clé inconnue -> elle-même). */
+export function libelleQuestion(cle, lang = 'fr') {
+  const q = LIBELLES.get(cle)
+  return (q && (q[lang] || q.fr)) || cle
+}
 
 /** La FAQ, limitée aux questions qui ont une vraie réponse avec les données actuelles. */
 export function questionsDisponibles(ctx) {
-  if (!ctx.candidat) return []
+  if (!ctx?.candidat) return []
+  const lang = ctx.lang === 'en' ? 'en' : 'fr'
   return FAQ.map((g) => ({
-    theme: g.theme,
-    questions: g.questions.filter((q) => {
-      const r = answer(q, ctx)
-      return r.title !== SANS_REPONSE && !r.vide
-    }),
+    id: g.theme.fr,
+    theme: g.theme[lang] || g.theme.fr,
+    questions: g.questions
+      .filter((q) => {
+        const r = answer(q.fr, ctx)
+        return !r.sansReponse && !r.vide
+      })
+      .map((q) => ({ key: q.fr, label: q[lang] || q.fr })),
   })).filter((g) => g.questions.length)
 }
 
@@ -221,103 +697,220 @@ const MOTS_VIDES = new Set(
   ),
 )
 
-export function answer(question, ctx) {
+const Q_RESULTATS = 'Quels résultats concrets a-t-il obtenus ?'
+
+export function answer(question, ctx = {}) {
+  const { lang, L, t, skillName, skillLabel, liste, duree, libelleExp, expItem, assoItem, projetItem } = outils(ctx)
   const q = normalize(question)
   const { candidat } = ctx
-  if (!candidat) return { title: 'Profil en cours de chargement', text: 'Réessayez dans un instant.', items: [] }
+  if (!candidat) return { title: t('chargementTitre'), text: t('chargementTexte'), items: [], sansReponse: true }
 
+  const projetsTous = ctx.projets || []
   const experiences = candidat.experiences || []
-  const pros = experiences.filter((e) => !ctx.isAssociatif(e))
-  const assos = experiences.filter((e) => ctx.isAssociatif(e))
+  const isAssociatif = ctx.isAssociatif || (() => false)
+  const pros = experiences.filter((e) => !isAssociatif(e))
+  const assos = experiences.filter((e) => isAssociatif(e))
   const liens = candidat.liens || {}
+  const langues = ctx.langues || candidat.langues || []
+  const certifications = ctx.certifications || candidat.certifications || []
+  const sansReponse = { title: t('sansReponse'), text: '', items: [], sansReponse: true }
 
-  // ── Contact / CV
-  if (has(q, / (contact|contacter|joindre|e ?mail|mail|linkedin|github|coordonnees|telephone) /)) {
-    const items = Object.entries(liens)
-      .filter(([, url]) => url)
-      .map(([k, url]) =>
-        k === 'email'
-          ? { label: 'E-mail', sub: url, href: `mailto:${url}` }
-          : { label: k === 'linkedin' ? 'LinkedIn' : k === 'github' ? 'GitHub' : k, sub: url, href: url },
-      )
-    if (ctx.cvAvailable) items.push({ label: 'Voir le CV', sub: 'Coordonnées complètes dans le CV (PDF)', cv: true })
-    return { title: 'Comment le contacter', text: liens.email ? `Par e-mail (${liens.email}) ou par message sur LinkedIn.` : 'Le plus simple : un message sur LinkedIn.', items }
+  // ── Projets publiés sur GitHub (avant « contact », qui reconnaît aussi « github »)
+  if (has(q, / github /) && has(q, / (projets?|code|depots?|realisations?) /)) {
+    const avecCode = trierProjets(projetsTous.filter((p) => p.liens?.github))
+    const items = avecCode.map((p) => ({ ...projetItem(p), sub: urlLisible(p.liens.github) }))
+    if (liens.github) items.push({ label: t('githubProfil'), sub: urlLisible(liens.github), href: liens.github })
+    return {
+      title: t('githubTitre'),
+      text: avecCode.length ? t('githubTexte', { n: avecCode.length, total: projetsTous.length }) : '',
+      items,
+      vide: !avecCode.length,
+    }
   }
+
+  // ── Adresse e-mail (avant « contact », qui reconnaît aussi « e-mail »)
+  if (has(q, / (e ?mail|mail|courriel|adresse electronique) /) && !has(q, / (contact|contacter|joindre) /)) {
+    return {
+      title: t('emailTitre'),
+      text: liens.email || '',
+      items: liens.email ? [{ label: t('emailEcrire'), sub: t('emailEcrireSub'), href: `mailto:${liens.email}` }] : [],
+      vide: !liens.email,
+    }
+  }
+
+  // ── Contact : e-mail d'abord, puis LinkedIn, GitHub, autres liens, et le CV s'il est en ligne
+  if (has(q, / (contact|contacter|joindre|e ?mail|mail|linkedin|github|coordonnees|telephone) /)) {
+    const ordre = ['email', 'linkedin', 'github']
+    const cles = [...ordre, ...Object.keys(liens).filter((k) => !ordre.includes(k))].filter((k) => liens[k])
+    const noms = { linkedin: 'LinkedIn', github: 'GitHub' }
+    const items = cles.map((k) =>
+      k === 'email'
+        ? { label: t('email'), sub: liens.email, href: `mailto:${liens.email}` }
+        : { label: noms[k] || majuscule(k), sub: urlLisible(liens[k]), href: liens[k] },
+    )
+    if (ctx.cvAvailable) items.push({ label: t('voirCv'), sub: t('cvCoordonnees'), cv: true })
+    const texte =
+      liens.email && liens.linkedin
+        ? t('contactEmailLinkedin', { email: liens.email })
+        : liens.email
+          ? t('contactEmail', { email: liens.email })
+          : liens.linkedin
+            ? t('contactLinkedin')
+            : t('contactAucun')
+    return { title: t('contactTitre'), text: texte, items, vide: !items.length }
+  }
+
+  // ── CV
   if (has(q, / (cv|curriculum|resume pdf) /)) {
     return ctx.cvAvailable
-      ? { title: 'Son CV', text: 'Le CV est disponible en PDF.', items: [{ label: 'Voir le CV', sub: 'PDF, avec option de téléchargement', cv: true }] }
-      : { title: 'Son CV', text: 'Le CV n’est pas encore en ligne : contactez-le via LinkedIn.', items: [], vide: true }
+      ? { title: t('cvTitre'), text: t('cvTexte'), items: [{ label: t('voirCv'), sub: t('cvSub'), cv: true }] }
+      : { title: t('cvTitre'), text: t('cvAbsent'), items: [], vide: true }
   }
 
-  // ── Langues / certifications
+  // ── Expérience dans une entreprise citée (« Que fait-il chez De Rijke ? »)
+  const citee = experienceCitee(q, experiences)
+  if (citee) {
+    const x = L.experience(citee)
+    return {
+      title: x.entreprise,
+      text: x.description || '',
+      items: [isAssociatif(citee) ? assoItem(citee) : expItem(citee)],
+    }
+  }
+
+  // ── Sport (détecté dans l'intitulé ou la description des expériences, pas écrit en dur)
+  if (has(q, / (sports?|sportif|sportive|natation|nage|nager|piscine|loisirs?|hobbies?|passions?|temps libre) /)) {
+    const sports = sortByDateDesc(experiences.filter((e) => SPORTS.test(normalize(`${e.poste} ${e.description}`))))
+    if (!sports.length) return { title: t('sportTitre', {}), text: t('sportAucun'), items: [], vide: true }
+    const noms = sports
+      .filter((e) => SPORTS.test(normalize(e.poste)))
+      .map((e) => nomSport(L.experience(e).poste))
+    const texte = sports
+      .map((e) => {
+        const x = L.experience(e)
+        const quand = e.fin
+          ? t('sportPeriode', { organisation: x.entreprise, periode: L.period(e.debut, e.fin) })
+          : t('sportDepuis', { organisation: x.entreprise, date: L.month(e.debut) })
+        return [quand, x.description].filter(Boolean).join(' ')
+      })
+      .join(' ')
+    return {
+      title: t('sportTitre', { sports: liste([...new Set(noms)]) }),
+      text: texte,
+      items: sports.map((e) => (isAssociatif(e) ? assoItem(e) : expItem(e))),
+    }
+  }
+
+  // ── Langues
   if (has(q, / (langues?|anglais|francais|english|parle|bilingue) /)) {
     // Une langue précise (« niveau d'anglais ») : elle passe en premier.
-    const precise = ctx.langues.find((l) => q.includes(` ${normalize(l.langue).trim()} `))
-    const liste = (ls) => ls.map((l) => `${l.langue} : ${l.niveau}`).join(' · ')
-    const autres = ctx.langues.filter((l) => l !== precise)
+    const precise = langues.find((l) => q.includes(` ${normalize(l.langue).trim()} `))
+    // Langue citée mais absente du profil : pas de vraie réponse (la question n'est pas proposée)
+    const absente = !precise && has(q, / (anglais|francais|espagnol|allemand|italien|portugais|english) /)
+    const autres = langues.filter((l) => l !== precise)
+    const ligne = (l) => {
+      const x = L.langue(l)
+      return `${x.langue}${t('deuxPoints')}${x.niveau}`
+    }
+    // « Français (langue maternelle) », « Anglais (B1, intermédiaire) » : pas de parenthèses imbriquées
+    const entreParentheses = (l) => {
+      const x = L.langue(l)
+      return `${x.langue} (${minuscule(String(x.niveau ?? '').replace(/\s*\(([^)]*)\)/, ', $1'))})`
+    }
     return {
-      title: precise ? `${precise.langue} : ${precise.niveau}` : 'Langues',
-      text: precise ? (autres.length ? `Autres langues : ${liste(autres)}` : '') : liste(ctx.langues),
-      items: [{ label: 'Voir le détail des langues', to: 'langues' }],
+      title: precise ? ligne(precise) : t('languesTitre'),
+      text: precise
+        ? autres.length
+          ? t('autresLangues', { n: autres.length, liste: autres.map(entreParentheses).join(', ') })
+          : ''
+        : langues.map(ligne).join(' · '),
+      items: [{ label: t('languesDetail'), to: 'langues' }],
+      vide: !langues.length || absente,
     }
   }
+
+  // ── Certifications
   if (has(q, / (certif\w*) /)) {
+    const parStatut = new Map()
+    for (const c of certifications) if (c.statut) parStatut.set(c.statut, (parStatut.get(c.statut) || 0) + 1)
+    const detail = [...parStatut]
+      .map(([statut, n]) => t('certifStatut', { n, statut, libelle: L.statut(statut) }))
+      .join(', ')
+    const unique = certifications.length === 1 && certifications[0]
     return {
-      title: 'Certifications',
-      text: `${ctx.certifications.length} certification(s).`,
-      items: ctx.certifications.map((c) => ({ label: c.nom, sub: c.statut, to: 'formation' })),
+      title: t('certifsTitre'),
+      text: unique
+        ? t('certifUnique', { libelle: unique.statut ? L.statut(unique.statut) : '' })
+        : certifications.length
+          ? t('certifsTexte', { n: certifications.length, detail })
+          : '',
+      items: certifications.map((c) => {
+        const x = L.certification(c)
+        return { label: x.nom, sub: majuscule(x.statut), to: 'formation' }
+      }),
+      vide: !certifications.length,
     }
   }
+
+  const expsChiffrees = sortByDateDesc(pros).filter((e) => chiffresCles(e.description))
+  const avecMetriques = projetsAvecMetriques(projetsTous)
 
   // ── Atouts (avant « disponibilité », qui reconnaît aussi « recruter »)
   if (has(q, / (pourquoi|atouts?|points forts|forces?|valeur ajoutee|apporter|se distingue) /)) {
-    const top = [...(candidat.competences || [])].sort((a, b) => (b.niveau || 0) - (a.niveau || 0)).slice(0, 4)
-    const avecMetriques = ctx.projets.filter((p) => p.metriques && Object.keys(p.metriques).length)
-    const enCours = pros.find((e) => !e.fin)
+    const top = topCompetences(candidat, 4)
+    const enCours = sortByDateDesc(pros).find((e) => !e.fin)
+    const total = moisCouverts(pros)
+    const data = moisCouverts(pros.filter((e) => (e.competences || []).length))
+    const experience = !pros.length
+      ? null
+      : data === total
+        ? t('atoutsExpData', { duree: duree(total) })
+        : data
+          ? t('atoutsExpDont', { duree: duree(total), dureeData: duree(data) })
+          : t('atoutsExp', { duree: duree(total) })
+    const actuel = enCours && L.experience(enCours)
     const texte = [
-      `${dureeTexte(moisCouverts(pros))} d’expérience professionnelle, dont ${dureeTexte(moisCouverts(pros.filter((e) => (e.competences || []).length)))} en data.`,
-      enCours ? `Actuellement ${enCours.poste} chez ${enCours.entreprise}.` : null,
-      `${ctx.projets.length} projets réalisés${avecMetriques.length ? `, dont ${avecMetriques.length} aux résultats chiffrés` : ''}.`,
-      top.length ? `Points forts : ${top.map((c) => c.nom).join(', ')}.` : null,
+      experience,
+      actuel ? t('atoutsActuel', { poste: actuel.poste, entreprise: actuel.entreprise }) : null,
+      projetsTous.length ? t('atoutsProjets', { n: projetsTous.length, m: avecMetriques.length }) : null,
+      top.length ? t('atoutsPointsForts', { liste: top.map((c) => skillLabel(c.skill_slug)).join(', ') }) : null,
     ]
       .filter(Boolean)
       .join(' ')
-    return {
-      title: 'Ses atouts',
-      text: texte,
-      items: [
-        { label: 'Voir ses résultats concrets', ask: 'Quels résultats concrets a-t-il obtenus ?' },
-        { label: 'Voir tous ses projets', to: 'projets' },
-      ],
-    }
+    const items = []
+    if (expsChiffrees.length || avecMetriques.length) items.push({ label: t('voirResultats'), ask: Q_RESULTATS })
+    if (projetsTous.length) items.push({ label: t('voirProjets'), to: 'projets' })
+    return { title: t('atoutsTitre'), text: texte, items, vide: !texte }
   }
 
-  // ── Résultats chiffrés des projets
+  // ── Résultats chiffrés : expériences (phrases chiffrées de la description) puis projets (métriques)
   if (has(q, / (resultats?|chiffres?|impacts?|gains?|metriques?|concrets?|realisations? chiffrees) /)) {
-    const avecMetriques = ctx.projets.filter((p) => p.metriques && Object.keys(p.metriques).length)
-    // Expériences dont la description contient des chiffres (ex. « +10 % de fidélisation ») : on garde ces phrases.
-    const phrasesChiffrees = (texte) =>
-      String(texte || '')
-        .split(/(?<=\.)\s+/)
-        .filter((s) => /\d+\s?%|\d+\+/.test(s))
-        .join(' ')
-    const expsChiffrees = sortByDateDesc(pros).filter((e) => phrasesChiffrees(e.description))
     const items = [
-      ...expsChiffrees.map((e) => ({ label: `${e.poste} chez ${e.entreprise}`, sub: phrasesChiffrees(e.description), to: 'experiences' })),
-      ...avecMetriques.map((p) => ({
-        label: p.titre,
-        sub: Object.entries(p.metriques)
-          .map(([k, v]) => `${humanizeKey(k)} ${v}`)
-          .join(' · '),
-        to: `projets/${p.projet_slug}`,
+      ...expsChiffrees.map((e) => ({
+        label: libelleExp(e),
+        sub: chiffresCles(L.experience(e).description),
+        wrap: true,
+        to: 'experiences',
       })),
+      ...avecMetriques.map((p) => {
+        const x = L.projet(p)
+        return {
+          label: x.titre,
+          sub: Object.entries(x.metriques)
+            .map(([k, v]) => `${L.metricLabel(k)}${t('deuxPoints')}${v}`)
+            .join(' · '),
+          wrap: true,
+          to: `projets/${p.projet_slug}`,
+        }
+      }),
     ]
-    return {
-      title: 'Résultats concrets',
-      text: 'Des résultats mesurés, en entreprise comme en projet :',
-      items,
-      vide: !items.length,
-    }
+    const texte =
+      expsChiffrees.length && avecMetriques.length
+        ? t('resultatsTous')
+        : expsChiffrees.length
+          ? t('resultatsEntreprise')
+          : t('resultatsProjets')
+    return { title: t('resultatsTitre'), text: items.length ? texte : '', items, vide: !items.length }
   }
 
   // ── Secteurs d'activité
@@ -328,38 +921,54 @@ export function answer(question, ctx) {
       if (!parSecteur.has(s)) parSecteur.set(s, [])
       parSecteur.get(s).push(e)
     }
+    const nommes = [...parSecteur.keys()].filter((s) => s !== AUTRE_SECTEUR)
     return {
-      title: 'Secteurs d’activité',
-      text: `${[...parSecteur.keys()].filter((s) => s !== 'Autre').join(', ')}.`,
+      title: t('secteursTitre'),
+      text: nommes.length ? t('secteursTexte', { n: nommes.length, liste: nommes.map((s) => minuscule(s[lang])).join(', ') }) : '',
       items: [...parSecteur.entries()].flatMap(([s, exps]) =>
-        exps.map((e) => ({ label: `${e.poste} chez ${e.entreprise}`, sub: `${s} · ${formatPeriod(e.debut, e.fin)}`, to: 'experiences' })),
+        exps.map((e) => ({ label: libelleExp(e), sub: `${s[lang]} · ${L.period(e.debut, e.fin)}`, to: 'experiences' })),
       ),
+      vide: !pros.length,
     }
   }
 
   // ── Formation
   if (has(q, / (formations?|diplomes?|ecoles?|etudes?|etudiant|master|ingenieur|prepa|academique|universite|esigelec|bac) /)) {
     const formations = sortByDateDesc(candidat.formations || [])
-    const enCours = formations.find((f) => f.fin && f.fin >= new Date().toISOString().slice(0, 7))
+    const enCours = formations.find((f) => f.fin && f.fin >= moisCourant())
+    const quand = has(q, / (quand|date|fin|termine\w*|obtention) /)
+    const x = enCours && L.formation(enCours)
+    const derniere = formations[0] && L.formation(formations[0])
     return {
-      title: 'Formation',
+      title: enCours && quand ? t('formationQuandTitre', { date: L.month(enCours.fin) }) : t('formationTitre'),
       text: enCours
-        ? `En cours : ${enCours.diplome} (${enCours.ecole}), diplôme prévu en ${formatMonth(enCours.fin)}.`
-        : `${formations.length} formation(s), la plus récente : ${formations[0]?.diplome} (${formations[0]?.ecole}).`,
-      items: formations.map((f) => ({ label: f.diplome, sub: `${f.ecole} · ${formatPeriod(f.debut, f.fin)}`, to: 'formation' })),
+        ? t('formationEnCours', { diplome: x.diplome, ecole: x.ecole, date: L.month(enCours.fin) })
+        : derniere
+          ? t('formationDerniere', { n: formations.length, diplome: derniere.diplome, ecole: derniere.ecole })
+          : '',
+      items: formations.map((f) => {
+        const xf = L.formation(f)
+        return { label: xf.diplome, sub: `${xf.ecole} · ${L.period(f.debut, f.fin)}`, to: 'formation' }
+      }),
+      // « Quand sera-t-il diplômé ? » n'a de sens que pendant une formation en cours
+      vide: !formations.length || (quand && !enCours),
     }
   }
 
   // ── Associatif
   if (has(q, / (associ\w*|benevol\w*|engagement|club|mentor\w*|afev) /)) {
+    const liste_ = sortByDateDesc(assos)
     return {
-      title: 'Engagement associatif',
-      text: assos.length ? `${assos.length} engagement(s) associatif(s).` : 'Aucun engagement associatif renseigné.',
-      items: sortByDateDesc(assos).map((e) => expItem(e, 'associatif')),
+      title: t('assoTitre'),
+      text: liste_.length
+        ? t('assoTexte', { n: liste_.length, noms: liste(liste_.map((e) => L.experience(e).entreprise)) })
+        : t('assoAucun'),
+      items: liste_.map((e) => assoItem(e)),
+      vide: !liste_.length,
     }
   }
 
-  const skills = detectSkills(q, ctx)
+  const skills = detectSkills(q, { ...ctx, projets: projetsTous, skillName })
 
   // ── Années d'expérience
   if (
@@ -368,124 +977,185 @@ export function answer(question, ctx) {
     !skills.slugs.length
   ) {
     const total = moisCouverts(pros)
-    const data = pros.filter((e) => (e.competences || []).length)
-    const totalData = moisCouverts(data)
+    const totalData = moisCouverts(pros.filter((e) => (e.competences || []).length))
+    const compte = { alternances: 0, stages: 0, autresPostes: 0 }
+    for (const e of pros) compte[typeContrat(e)] += 1
+    const types = liste(Object.entries(compte).map(([cle, n]) => (n ? t(cle, { n }) : null)))
+    const vars = { duree: duree(total), n: pros.length, types, dureeData: duree(totalData) }
     return {
-      title: 'Expérience professionnelle',
-      text: `${dureeTexte(total)} d’expérience professionnelle cumulée (${pros.length} expériences), dont ${dureeTexte(totalData)} en data (alternance et stages).`,
-      items: sortByDateDesc(pros).map((e) => expItem(e, 'experiences')),
+      title: t('expTitre'),
+      text: !pros.length
+        ? ''
+        : totalData === total
+          ? t('expData', vars)
+          : totalData
+            ? t('expDont', vars)
+            : t('expSimple', vars),
+      items: sortByDateDesc(pros).map(expItem),
+      vide: !pros.length,
     }
   }
 
   // ── Poste actuel / disponibilité
   if (has(q, / (actuel\w*|aujourd hui|en ce moment|maintenant|poste|alternance|alternant|disponib\w*|recrut\w*|embauch\w*|cdi|stage) /)) {
-    const enCours = pros.filter((e) => !e.fin)
-    const formation = sortByDateDesc(candidat.formations || []).find((f) => !f.fin || f.fin >= new Date().toISOString().slice(0, 7))
+    const enCours = sortByDateDesc(pros.filter((e) => !e.fin))
+    const formation = sortByDateDesc(candidat.formations || []).find((f) => !f.fin || f.fin >= moisCourant())
+    const xf = formation && L.formation(formation)
+    const dispo = has(q, / (disponib\w*|recrut\w*|embauch\w*|cdi|stage) /)
+    const roles = enCours.map((e) => {
+      const x = L.experience(e)
+      return t('actuelRole', { poste: x.poste, entreprise: x.entreprise, date: L.month(e.debut) })
+    })
+    const varsFormation = xf && { diplome: xf.diplome, ecole: xf.ecole, date: formation.fin ? L.month(formation.fin) : '' }
     const texte = [
-      enCours.length ? `En ce moment : ${enCours.map((e) => `${e.poste} chez ${e.entreprise} (depuis ${formatMonth(e.debut)})`).join(', ')}.` : null,
-      formation ? `En parallèle : ${formation.diplome} (${formation.ecole}), fin prévue ${formatPeriod(formation.fin, formation.fin)}.` : null,
-      'Pour une opportunité, contactez-le via LinkedIn.',
+      roles.length ? t('actuelTexte', { roles: liste(roles) }) : null,
+      xf ? t(roles.length ? 'actuelFormation' : 'actuelFormationSeule', varsFormation) : null,
+      liens.email ? t('actuelContactEmail', { email: liens.email }) : t('actuelContactLinkedin'),
     ]
       .filter(Boolean)
       .join(' ')
-    const dispo = has(q, / (disponib\w*|recrut\w*|embauch\w*|cdi|stage) /)
-    return { title: dispo ? 'Disponibilité' : 'Situation actuelle', text: texte, items: enCours.map((e) => expItem(e, 'experiences')) }
+    const items = enCours.map(expItem)
+    if (dispo) {
+      if (liens.email) items.push({ label: t('email'), sub: liens.email, href: `mailto:${liens.email}` })
+      if (liens.linkedin) items.push({ label: 'LinkedIn', sub: urlLisible(liens.linkedin), href: liens.linkedin })
+    } else if (xf) {
+      items.push({ label: xf.diplome, sub: `${xf.ecole} · ${L.period(formation.debut, formation.fin)}`, to: 'formation' })
+    }
+    // Sans poste ni formation en cours, « Que fait-il en ce moment ? » n'a pas de vraie réponse
+    return { title: dispo ? t('dispoTitre') : t('actuelTitre'), text: texte, items, vide: !dispo && !roles.length && !xf }
   }
 
-  // ── Projets / expériences par compétence
+  // ── Expérience par compétence : en entreprise, en projet personnel, en associatif
   if (skills.slugs.length) {
     const set = new Set(skills.slugs)
-    const projets = ctx.projets.filter((p) => (p.competences || []).some((s) => set.has(s)))
-    const exps = pros.filter((e) => (e.competences || []).some((s) => set.has(s)))
-    const sujet = skills.familles.length ? skills.familles.map((f) => f.label).join(', ') : skills.slugs.map(ctx.skillName).join(', ')
-    const mois = moisCouverts(exps)
-    // Compétences déclarées dans le profil (niveau sur 5), utiles quand aucun projet publié ne les mobilise.
-    const declarees = (candidat.competences || []).filter((c) => set.has(c.skill_slug))
-    const niveaux = declarees.map((c) => c.nom).join(', ')
+    const utilise = (x) => (x.competences || []).some((s) => set.has(s))
+    const exps = sortByDateDesc(pros.filter(utilise))
+    const projets = trierProjets(projetsTous.filter(utilise))
+    const assosX = sortByDateDesc(assos.filter(utilise))
+    // Compétences déclarées dans le profil, dans l'ordre de la question puis de la famille
+    const declarees = skills.slugs
+      .map((slug) => (candidat.competences || []).find((c) => c.skill_slug === slug))
+      .filter(Boolean)
+    const sujet = skills.familles.length
+      ? skills.familles.map((f) => f.titre[lang]).join(', ')
+      : skills.slugs.map(skillLabel).join(', ')
+    const pratique = [
+      exps.length
+        ? t('pratiqueEntreprise', {
+            duree: duree(moisCouverts(exps)),
+            entreprises: [...new Set(exps.map((e) => L.experience(e).entreprise))].join(', '),
+          })
+        : null,
+      projets.length ? t('pratiqueProjets', { n: projets.length }) : null,
+      assosX.length
+        ? t('pratiqueAsso', { n: assosX.length, noms: assosX.map((e) => L.experience(e).entreprise).join(', ') })
+        : null,
+    ].filter(Boolean)
+    const texte = [
+      declarees.length && (skills.familles.length || !pratique.length)
+        ? t('competencesListe', { liste: declarees.map((c) => skillLabel(c.skill_slug)).join(', ') })
+        : null,
+      pratique.length ? t('pratique', { liste: liste(pratique) }) : null,
+    ]
+      .filter(Boolean)
+      .join(' ')
+    const items = [
+      ...exps.map(expItem),
+      ...projets.map((p) => projetItem(p, (p.competences || []).filter((s) => set.has(s)))),
+      ...assosX.map((e) => assoItem(e, { detail: true })),
+    ]
+    if (!items.length && declarees.length) items.push({ label: t('voirCompetences'), to: 'competences' })
     return {
-      title: `${sujet.charAt(0).toUpperCase()}${sujet.slice(1)}`,
-      text: projets.length
-        ? `${projets.length} projet(s) mobilisent ${sujet}${exps.length ? `, et ${dureeTexte(mois)} d’expérience professionnelle s’y rapportent` : ''}.`
-        : exps.length
-          ? `Mis en pratique en entreprise : ${dureeTexte(mois)} d’expérience professionnelle avec ${sujet}.`
-          : declarees.length
-          ? `Compétence(s) déclarée(s) : ${niveaux}${exps.length ? `, mises en pratique dans ${exps.length} expérience(s) professionnelle(s)` : ''}.`
-          : `Aucun projet ne mobilise ${sujet}${exps.length ? `, mais ${exps.length} expérience(s) professionnelle(s) oui` : ''}.`,
-      items: [
-        ...projets.map((p) => projetItem(p, ctx.skillName, (p.competences || []).filter((s) => set.has(s)))),
-        ...exps.map((e) => expItem(e, 'experiences')),
-      ],
-      vide: !projets.length && !exps.length && !declarees.length,
+      title: majuscule(sujet),
+      text: texte,
+      items,
+      vide: !exps.length && !projets.length && !assosX.length && !declarees.length,
     }
   }
 
   // ── Entreprises
   if (has(q, / (entreprises?|societes?|employeurs?|boites?|travaille) /)) {
+    const exps = sortByDateDesc(pros)
+    const noms = [...new Set(exps.map((e) => L.experience(e).entreprise))]
     return {
-      title: 'Entreprises',
-      text: `${pros.length} expérience(s) dans ${new Set(pros.map((e) => e.entreprise)).size} structure(s).`,
-      items: sortByDateDesc(pros).map((e) => expItem(e, 'experiences')),
+      title: t('entreprisesTitre'),
+      text: noms.length ? t('entreprisesTexte', { n: noms.length, noms: liste(noms) }) : '',
+      items: exps.map(expItem),
+      vide: !exps.length,
     }
   }
 
   // ── Projet le plus récent
   if (has(q, / (projets?|realisations?) /) && has(q, / (recents?|dernier|derniere|nouveau) /)) {
-    const dates = ctx.projets.filter((p) => p.date_debut || p.date_fin)
-    const recent = [...dates].sort((a, b) =>
-      String(b.date_fin || b.date_debut).localeCompare(String(a.date_fin || a.date_debut)),
-    )[0]
+    const recent = trierProjets(projetsTous.filter((p) => p.date_debut || p.date_fin))[0]
     if (recent) {
+      const x = L.projet(recent)
+      const date = L.period(recent.date_debut, recent.date_fin)
       return {
-        title: 'Son projet le plus récent',
-        text: `${recent.titre} (${formatPeriod(recent.date_debut, recent.date_fin)}) : ${recent.description}`,
-        items: [projetItem(recent, ctx.skillName, recent.competences || [])],
+        title: t('projetRecentTitre'),
+        text: `${x.titre}${date ? `, ${date}` : ''}. ${x.description || ''}`.trim(),
+        items: [projetItem(recent, recent.competences || [])],
       }
     }
   }
 
-  // ── Projets (général)
+  // ── Projets personnels (général)
   if (has(q, / (projets?|realisations?|portfolio|travaux) /)) {
-    const projets = [...ctx.projets].sort((a, b) => String(b.date_debut || '').localeCompare(String(a.date_debut || '')))
+    const projets = trierProjets(projetsTous)
     return {
-      title: 'Projets',
-      text: `${projets.length} projets réalisés.`,
-      items: projets.map((p) => projetItem(p, ctx.skillName)),
+      title: t('projetsTitre'),
+      text: projets.length ? t('projetsTexte', { n: projets.length }) : '',
+      items: projets.map((p) => projetItem(p)),
+      vide: !projets.length,
     }
   }
 
   // ── Compétences (général)
   if (has(q, / (competences?|sait|savoir|maitrise|technos?|technologies?|outils?|stack|langages?|points forts) /)) {
-    const top = [...(candidat.competences || [])].sort((a, b) => (b.niveau || 0) - (a.niveau || 0)).slice(0, 10)
+    const toutes = candidat.competences || []
+    // Une compétence mobilisée par un projet ouvre les projets filtrés ; sinon, le graphe de compétences.
+    const lien = (slug) =>
+      projetsTous.some((p) => (p.competences || []).includes(slug)) ? `projets?competence=${slug}` : 'competences'
     return {
-      title: 'Compétences principales',
-      text: `${(candidat.competences || []).length} compétences déclarées. Les plus maîtrisées :`,
-      items: top.map((c) => ({ label: c.nom, sub: DOMAINES_LIBELLES[c.domaine] || c.domaine || '', to: `projets?competence=${c.skill_slug}` })),
+      title: t('competencesTitre'),
+      text: toutes.length ? t('competencesTexte', { n: toutes.length }) : '',
+      items: topCompetences(candidat, 10).map((c) => ({
+        label: skillLabel(c.skill_slug),
+        sub: c.domaine ? L.domain(c.domaine) : '',
+        to: lien(c.skill_slug),
+      })),
+      vide: !toutes.length,
     }
   }
 
   // ── Profil
   if (has(q, / (qui|profil|presente\w*|resume|parcours|bio) /)) {
-    return { title: `${candidat.prenom} ${candidat.nom}`, text: candidat.bio || candidat.titre, items: [] }
+    return {
+      title: [candidat.prenom, candidat.nom].filter(Boolean).join(' '),
+      text: L.bio(candidat.bio) || L.titre(candidat.titre) || '',
+      items: [{ label: t('voirParcours'), sub: t('voirParcoursSub'), to: 'portfolio' }],
+    }
   }
 
-  // ── Recherche plein texte (repli)
+  // ── Recherche plein texte (repli) : la détection se fait en français, l'affichage dans la langue du site
   const mots = q.split(' ').filter((w) => w.length >= 3 && !MOTS_VIDES.has(w))
   if (mots.length) {
     const score = (texte) => mots.filter((m) => normalize(texte).includes(` ${m}`)).length
-    const projets = ctx.projets
+    const projets = projetsTous
       .map((p) => ({ p, s: score(`${p.titre} ${p.description} ${p.contexte}`) }))
       .filter((x) => x.s > 0)
       .sort((a, b) => b.s - a.s)
-      .map((x) => projetItem(x.p, ctx.skillName))
+      .map((x) => projetItem(x.p))
     const exps = experiences
       .map((e) => ({ e, s: score(`${e.poste} ${e.entreprise} ${e.description}`) }))
       .filter((x) => x.s > 0)
       .sort((a, b) => b.s - a.s)
-      .map((x) => expItem(x.e, ctx.isAssociatif(x.e) ? 'associatif' : 'experiences'))
+      .map((x) => (isAssociatif(x.e) ? assoItem(x.e) : expItem(x.e)))
     if (projets.length || exps.length) {
-      return { title: 'Résultats', text: `${projets.length + exps.length} élément(s) correspondent à votre recherche.`, items: [...projets, ...exps] }
+      const n = projets.length + exps.length
+      return { title: t('rechercheTitre'), text: t('rechercheTexte', { n }), items: [...projets, ...exps] }
     }
   }
 
-  return { title: SANS_REPONSE, text: '', items: [] }
+  return sansReponse
 }

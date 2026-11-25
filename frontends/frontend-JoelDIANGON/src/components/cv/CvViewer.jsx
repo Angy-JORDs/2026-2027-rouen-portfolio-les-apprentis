@@ -2,7 +2,29 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { AnimatePresence, motion } from 'framer-motion'
 import { CV_URL } from '../../content/static'
 import { useMediaQuery } from '../../hooks/useMediaQuery'
+import { useT } from '../../i18n/LangContext'
 import { CloseIcon, CvIcon, DownloadIcon, ExternalIcon } from '../icons'
+
+const TEXTES = {
+  fr: {
+    titre: 'Mon CV',
+    telecharger: 'Télécharger',
+    nouvelOnglet: 'Ouvrir le CV dans un nouvel onglet',
+    fermer: 'Fermer le CV',
+    lecteur: 'Le CV s’ouvre dans le lecteur PDF de votre appareil.',
+    ouvrir: 'Ouvrir le CV',
+    document: 'CV de Joël DIANGON',
+  },
+  en: {
+    titre: 'My CV',
+    telecharger: 'Download',
+    nouvelOnglet: 'Open the CV in a new tab',
+    fermer: 'Close the CV',
+    lecteur: "The CV opens in your device's PDF viewer.",
+    ouvrir: 'Open the CV',
+    document: "Joël DIANGON's CV",
+  },
+}
 
 const CvViewerContext = createContext({ openCv: () => {} })
 
@@ -24,7 +46,7 @@ export function CvViewerProvider({ children }) {
   )
 }
 
-const FICHIER = 'CV-Joel-Diangon.pdf'
+const FICHIER = 'CV-Joel-DIANGON.pdf'
 
 /**
  * Le CV s'affiche dans la page (lecteur PDF du navigateur), avec « Télécharger » et « Ouvrir dans un onglet ».
@@ -33,6 +55,7 @@ const FICHIER = 'CV-Joel-Diangon.pdf'
  */
 function CvModal({ onClose }) {
   const isTouch = useMediaQuery('(pointer: coarse)')
+  const t = useT(TEXTES)
   const dialogRef = useRef(null)
   const onCloseRef = useRef(onClose)
   onCloseRef.current = onClose
@@ -51,9 +74,9 @@ function CvModal({ onClose }) {
   const fallback = (
     <div className="cv-fallback">
       <CvIcon className="cv-fallback-icon" />
-      <p>Le CV s’ouvre dans le lecteur PDF de votre appareil.</p>
+      <p>{t('lecteur')}</p>
       <a className="btn" href={CV_URL} target="_blank" rel="noreferrer">
-        <ExternalIcon /> Ouvrir le CV
+        <ExternalIcon /> {t('ouvrir')}
       </a>
     </div>
   )
@@ -81,18 +104,25 @@ function CvModal({ onClose }) {
       >
         <header className="cv-head">
           <h2 id="cv-title" className="cv-title">
-            <CvIcon /> Mon CV
+            <CvIcon /> {t('titre')}
           </h2>
           <div className="cv-actions">
             <a className="btn cv-download" href={CV_URL} download={FICHIER}>
-              <DownloadIcon /> Télécharger
+              <DownloadIcon /> {t('telecharger')}
             </a>
             {!isTouch && (
-              <a className="btn cv-icon-btn" href={CV_URL} target="_blank" rel="noreferrer" aria-label="Ouvrir le CV dans un nouvel onglet">
+              <a
+                className="btn cv-icon-btn"
+                href={CV_URL}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={t('nouvelOnglet')}
+                title={t('nouvelOnglet')}
+              >
                 <ExternalIcon />
               </a>
             )}
-            <button type="button" className="cv-close" aria-label="Fermer le CV" onClick={onClose}>
+            <button type="button" className="cv-close" aria-label={t('fermer')} onClick={onClose}>
               <CloseIcon />
             </button>
           </div>
@@ -101,7 +131,7 @@ function CvModal({ onClose }) {
           {isTouch ? (
             fallback
           ) : (
-            <object className="cv-frame" data={`${CV_URL}#view=FitH`} type="application/pdf" aria-label="CV de Joël Diangon">
+            <object className="cv-frame" data={`${CV_URL}#view=FitH`} type="application/pdf" aria-label={t('document')}>
               {fallback}
             </object>
           )}

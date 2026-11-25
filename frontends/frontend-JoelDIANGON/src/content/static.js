@@ -21,7 +21,8 @@ export const CERTIFICATIONS = [
 ]
 
 /** Organisations dont l'expérience est classée « associative » (le reste est professionnel). */
-const ORGANISATIONS_ASSOCIATIVES = ['afev', 'club informatique', 'vikings']
+// Noms français ET anglais (src/i18n/content.js traduit « Club informatique ESIGELEC » en « ESIGELEC Computer Club »)
+const ORGANISATIONS_ASSOCIATIVES = ['afev', 'club informatique', 'computer club', 'vikings']
 
 export function isAssociatif(experience) {
   const nom = String(experience?.entreprise || '').toLowerCase()

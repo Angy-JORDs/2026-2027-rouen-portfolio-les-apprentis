@@ -1,6 +1,33 @@
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { forceCollide, forceLink, forceManyBody, forceSimulation, forceX, forceY } from 'd3-force'
+import { useLang, useT } from '../i18n/LangContext'
+
+const TEXTES = {
+  fr: {
+    vide: 'Le graphe est vide pour le moment.',
+    description: "Graphe de mes compétences : chaque projet est relié aux compétences qu'il mobilise",
+    voirProjets: '{label} : voir les projets',
+    voirFiche: 'Projet {label} : voir la fiche',
+  },
+  en: {
+    vide: 'The graph is empty for now.',
+    description: 'Graph of my skills: each project is linked to the skills it uses',
+    voirProjets: '{label}: see related projects',
+    voirFiche: 'Project {label}: view details',
+  },
+}
+
+/**
+ * Libellé affiché d'un nœud, dans la langue du site. Seul l'affichage est traduit : la mise en page
+ * (computeLayout) ne dépend pas de la langue, le graphe ne bouge donc pas quand on change de langue.
+ */
+function nodeLabel(n, L) {
+  if (n.type === 'candidat') return n.label.split(' ')[0]
+  if (n.type === 'competence') return L.skill(n.slug, n.label)
+  if (n.type === 'projet') return L.projetTitre(n.slug, n.label)
+  return n.label
+}
 
 /**
  * Graphe Candidat → Projets → Compétences (R5), mis en page par simulation de forces (d3-force),
@@ -59,8 +86,10 @@ function computeLayout(graph) {
 export default function SkillGraph({ data, onSelectSkill, onSelectProjet }) {
   const layout = useMemo(() => (data?.nodes?.length ? computeLayout(data) : null), [data])
   const [hovered, setHovered] = useState(null)
+  const t = useT(TEXTES)
+  const { L } = useLang()
 
-  if (!layout) return <p className="empty">Le graphe est vide pour le moment.</p>
+  if (!layout) return <p className="empty">{t('vide')}</p>
   const lit = hovered ? layout.neighbours.get(hovered) : null
 
   const activate = (node) => {
@@ -73,7 +102,7 @@ export default function SkillGraph({ data, onSelectSkill, onSelectProjet }) {
       className="skill-graph"
       viewBox={layout.viewBox}
       role="img"
-      aria-label="Graphe de mes compétences : chaque projet est relié aux compétences qu'il mobilise"
+      aria-label={t('description')}
     >
       <g className="sg-links">
         {layout.links.map((l, i) => {
@@ -98,6 +127,7 @@ export default function SkillGraph({ data, onSelectSkill, onSelectProjet }) {
           const dim = lit && !lit.has(n.id)
           const interactive = n.type !== 'candidat'
           const showLabel = n.type !== 'projet' || hovered === n.id || (lit && lit.has(n.id))
+          const label = nodeLabel(n, L)
           return (
             <motion.g
               key={n.id}
@@ -125,9 +155,9 @@ export default function SkillGraph({ data, onSelectSkill, onSelectProjet }) {
               role={interactive ? 'button' : undefined}
               aria-label={
                 n.type === 'competence'
-                  ? `${n.label} : voir les projets`
+                  ? t('voirProjets', { label })
                   : n.type === 'projet'
-                    ? `Projet ${n.label} : voir la fiche`
+                    ? t('voirFiche', { label })
                     : undefined
               }
             >
@@ -139,7 +169,7 @@ export default function SkillGraph({ data, onSelectSkill, onSelectProjet }) {
                   y={n.type === 'candidat' ? n.r + 18 : n.r + 13}
                   textAnchor="middle"
                 >
-                  {n.type === 'candidat' ? n.label.split(' ')[0] : n.label}
+                  {label}
                 </text>
               )}
             </motion.g>

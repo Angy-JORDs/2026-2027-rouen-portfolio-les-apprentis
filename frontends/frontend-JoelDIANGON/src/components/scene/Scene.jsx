@@ -3,13 +3,39 @@ import { motion } from 'framer-motion'
 import { SECTIONS, SECTION_BY_ID } from '../../content/sections'
 import { useCandidat } from '../../context/CandidatContext'
 import { useMediaQuery } from '../../hooks/useMediaQuery'
-import { ArrowRightIcon } from '../icons'
+import { useT } from '../../i18n/LangContext'
+import { ArrowRightIcon, ContactIcon } from '../icons'
 import RecruiterSearch from '../search/RecruiterSearch'
 import Backdrop from './Backdrop'
 import Bust from './Bust'
 import SceneObject from './SceneObject'
 
 const EASE = [0.22, 1, 0.36, 1]
+
+const TEXTES = {
+  fr: {
+    nom: 'Joël DIANGON',
+    titre: 'Ingénieur Data · BI · IA',
+    ecrire: 'M’écrire',
+    ecrireA: 'M’écrire à {email}',
+    parcours: 'Mon parcours',
+    accroche: 'Chaque expérience façonne la suite.',
+    chronologie: 'Voir la chronologie complète',
+    indiceTactile: 'Touchez un élément pour l’explorer',
+    indiceSouris: 'Survolez les éléments, cliquez pour explorer',
+  },
+  en: {
+    nom: 'Joël DIANGON',
+    titre: 'Data · BI · AI Engineer',
+    ecrire: 'Email me',
+    ecrireA: 'Email me at {email}',
+    parcours: 'My journey',
+    accroche: 'Every experience shapes what comes next.',
+    chronologie: 'View the full timeline',
+    indiceTactile: 'Tap an item to explore it',
+    indiceSouris: 'Hover over the items, click to explore',
+  },
+}
 
 /**
  * Écran d'accueil : le personnage, vu de dos, face au couloir et aux éléments de son parcours.
@@ -19,6 +45,7 @@ export default function Scene({ activeId, onOpen }) {
   const isMobile = useMediaQuery('(max-width: 760px)')
   const [hovered, setHovered] = useState(null)
   const { candidat } = useCandidat()
+  const t = useT(TEXTES)
 
   // Point de zoom : l'élément ouvert (on garde le dernier pendant l'animation de fermeture).
   const lastFocus = useRef({ x: 50, y: 45 })
@@ -28,6 +55,7 @@ export default function Scene({ activeId, onOpen }) {
   const focus = hovered ? SECTION_BY_ID[hovered] : null
   const lookAt = focus?.pos ? (focus.pos.x - 50) / 34 : 0
   const accroche = candidat?.titre?.split(',')[0]
+  const email = candidat?.liens?.email
 
   return (
     <motion.main
@@ -45,8 +73,16 @@ export default function Scene({ activeId, onOpen }) {
         animate={{ opacity: 1 }}
         transition={{ duration: 1.2, delay: 0.2 }}
       >
-        <span className="scene-brand-name">{candidat ? `${candidat.prenom} ${candidat.nom}` : 'Joël Diangon'}</span>
-        <span className="scene-brand-role">{accroche || 'Ingénieur Data · BI · IA'}</span>
+        <span className="scene-brand-name">{candidat ? `${candidat.prenom} ${candidat.nom}` : t('nom')}</span>
+        <span className="scene-brand-role">{accroche || t('titre')}</span>
+        {/* E-mail sous le titre : adresse complète, ou « M'écrire » sur téléphone (choix en CSS) */}
+        {email && (
+          <a className="scene-brand-mail" href={`mailto:${email}`} aria-label={t('ecrireA', { email })}>
+            <ContactIcon />
+            <span className="scene-brand-mail-full">{email}</span>
+            <span className="scene-brand-mail-short">{t('ecrire')}</span>
+          </a>
+        )}
       </motion.p>
 
       <motion.header
@@ -55,10 +91,10 @@ export default function Scene({ activeId, onOpen }) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1.1, delay: 0.45, ease: EASE }}
       >
-        <h1 className="scene-title">Mon parcours</h1>
-        <p className="scene-subtitle">Chaque expérience façonne la suite.</p>
+        <h1 className="scene-title">{t('parcours')}</h1>
+        <p className="scene-subtitle">{t('accroche')}</p>
         <button type="button" className="scene-link" onClick={() => onOpen('portfolio')}>
-          Voir la chronologie complète <ArrowRightIcon />
+          {t('chronologie')} <ArrowRightIcon />
         </button>
       </motion.header>
 
@@ -101,7 +137,7 @@ export default function Scene({ activeId, onOpen }) {
         transition={{ duration: 1, delay: 2.2 }}
       >
         <span className="scene-hint-dot" aria-hidden="true" />
-        {isMobile ? 'Touchez un élément pour l’explorer' : 'Survolez les éléments, cliquez pour explorer'}
+        {isMobile ? t('indiceTactile') : t('indiceSouris')}
       </motion.p>
     </motion.main>
   )
