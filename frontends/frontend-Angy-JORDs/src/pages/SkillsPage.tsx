@@ -4,7 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import ForceGraph2D from 'react-force-graph-2d';
 import { ArrowUpRight, Briefcase, FolderGit2, LayoutGrid, Search, Share2, Target, X } from 'lucide-react';
 import { SectionHeader } from '../components/ui/SectionHeader';
-import { Competence, StatCompetence, Experience, Projet } from '../types/portfolio';
+import { Competence, StatCompetence, Experience, Projet, GraphData } from '../types/portfolio';
 import { skillMatches, expSlug } from '../services/skillLinks';
 import { useTheme } from '../hooks/useTheme';
 
@@ -15,8 +15,9 @@ import { useTheme } from '../hooks/useTheme';
 interface SkillsPageProps {
   competences: Competence[];
   stats: StatCompetence[];
-  projets?: Projet[];
-  experiences?: Experience[];
+  graph: GraphData;
+  projets: Projet[];
+  experiences: Experience[];
 }
 
 // Champs supposés sur Competence : niveau (0-5) · depuis (année de 1re utilisation)
